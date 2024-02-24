@@ -4,15 +4,22 @@ import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DirectedPseudograph;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.analysis.*;
+import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
+import org.objectweb.asm.util.TraceMethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -63,14 +70,28 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     }
 
 
+
+
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
+        /*
+        class Node<V extends Value> extends Frame<V> {
+            Set< Node<V> > successors = new HashSet< Node<V> >();
+            public Node(int nLocals, int nStack) {
+                super(nLocals, nStack);
+            }
+            public Node(Frame<? extends V> src) {
+                super(src);
+            }
+        }
+         */
         // System.out.println("I'm the ClassFileTransformer");
         ClassNode cn = new ClassNode(ASM4);
         ClassReader cr = new ClassReader(classfileBuffer);
 
         cr.accept(cn, 0);
         for (MethodNode mn : (List<MethodNode>) cn.methods) {
+            DirectedPseudograph<AbstractInsnNode, DefaultEdge> controlGraph = new DirectedPseudograph<>(DefaultEdge.class);
             // Check if the method is annotated with our custom one
             boolean isAnnotated = false;
             if(mn.visibleAnnotations != null) for(AnnotationNode an: mn.visibleAnnotations) {
@@ -89,7 +110,99 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     continue;
                 }
 
+                try {
+
+
+                Iterator<AbstractInsnNode> j = insns.iterator();
+                while (j.hasNext()) {
+                    AbstractInsnNode in = j.next();
+                    /*
+                    if (controlGraph.vertexSet().isEmpty()){
+                        controlGraph.addVertex(in);
+                    }
+                     */
+
+
+                    int op = in.getOpcode();
+                    if (op >= IFEQ && op <= IF_ACMPNE) {
+                        controlGraph.addVertex(in);
+                        // Busco el label de salto (donde va el programa si se evalua true)
+                        if (in instanceof JumpInsnNode){
+                            LabelNode label = ((JumpInsnNode) in).label;
+                            AbstractInsnNode target = in.getNext();
+                            while (true) {
+                                if (target instanceof LabelNode){
+                                    if (((LabelNode) target).equals(label)){
+                                        controlGraph.addVertex(target);
+                                        controlGraph.addEdge(in,target);
+                                        break;
+                                    }
+                                }
+                                target = target.getNext();
+                            }
+                        }
+                        // Añado un mensaje a continuación de la comparacion: se ha debido de evaluar como false
+                        controlGraph.addVertex(in.getNext());
+                        controlGraph.addEdge(in, in.getNext());
+                    }
+                }
+
+                System.out.println(controlGraph.toString());
+
+                } catch (Exception e){
+                    System.out.println(e);
+                }
+
+
+                /*
+                Analyzer<BasicValue> a =
+                    new Analyzer<BasicValue>(new BasicInterpreter()) {
+                        protected Frame<BasicValue> newFrame(int nLocals, int nStack) {
+                            return new Node<BasicValue>(nLocals, nStack);
+                        }
+                        protected Frame<BasicValue> newFrame(
+                                Frame<? extends BasicValue> src) {
+                            return new Node<BasicValue>(src);
+                        }
+                        protected void newControlFlowEdge(int src, int dst) {
+                            Node<BasicValue> s = (Node<BasicValue>) getFrames()[src];
+                            s.successors.add((Node<BasicValue>) getFrames()[dst]);
+                        }
+                    };
+                try {
+                    a.analyze(cn.name, mn);
+                } catch (AnalyzerException e) {
+                    throw new RuntimeException(e);
+                }
+
+
+                Frame[] frames = a.getFrames();
+                int edges = 0;
+                int nodes = 0;
+                for (int i = 0; i < frames.length; ++i) {
+
+                    if (frames[i] != null) {
+                        int numSuccessors = ((Node) frames[i]).successors.size();
+                        edges += numSuccessors;
+                        nodes += 1;
+                        if (numSuccessors > 1){
+                            System.out.println("Frame " + i + " (" + numSuccessors + ") ");
+                            //for (Node<BasicValue> sucessor: ((Node) frames[i]).successors);
+                            Iterator nodeIterator = ((Node) frames[i]).successors.iterator();
+                            while (nodeIterator.hasNext()){
+                                Node node = (Node) nodeIterator.next();
+                                node.
+                            }
+                            System.out.println("\nFrame " + i + " (" + numSuccessors + ") ");
+                        }
+                    }
+
+
+                }
+                */
+
                 this.addInstructionsConditionsAndBranches(insns);
+
             }
         }
 
