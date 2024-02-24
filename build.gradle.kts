@@ -14,6 +14,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
     implementation("org.ow2.asm:asm-tree:9.6")
     implementation("org.ow2.asm:asm-util:9.6")
+    implementation("org.ow2.asm:asm-analysis:9.6")
 
 
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
