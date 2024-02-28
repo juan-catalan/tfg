@@ -80,6 +80,12 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     target.equals(nextNode)
             ){
                 while (nextNode.getOpcode() < 0) nextNode = nextNode.getNext();
+                int opCode = nextNode.getOpcode();
+                while (!((opCode >= IFEQ && opCode <= IF_ACMPNE) ||
+                        (opCode >= IRETURN && opCode <= RETURN))){
+                    nextNode = nextNode.getNext();
+                    opCode = nextNode.getOpcode();
+                }
                 return nextNode;
             }
             nextNode = nextNode.getNext();
@@ -91,6 +97,12 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 target.equals(previousNode)
             ){
                 while (previousNode.getOpcode() < 0) previousNode = previousNode.getNext();
+                int opCode = previousNode.getOpcode();
+                while (!((opCode >= IFEQ && opCode <= IF_ACMPNE) ||
+                        (opCode >= IRETURN && opCode <= RETURN))){
+                    previousNode = previousNode.getNext();
+                    opCode = previousNode.getOpcode();
+                }
                 return previousNode;
             }
             previousNode = previousNode.getPrevious();

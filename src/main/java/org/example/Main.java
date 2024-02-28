@@ -9,6 +9,15 @@ public class Main {
     }
 
     @Coverage2Edge
+    public static void pruebaWhile(){
+        int i = 0;
+        while(i < 5){
+            System.out.println(i);
+            i++;
+        }
+    }
+
+    @Coverage2Edge
     public static void main(String[] args) {
         // Index: 7
         if (System.currentTimeMillis() % 2 == 0){
