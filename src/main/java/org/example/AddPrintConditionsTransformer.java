@@ -90,7 +90,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             if ((previousNode instanceof LabelNode) &&
                 target.equals(previousNode)
             ){
-                while (nextNode.getOpcode() < 0) nextNode = nextNode.getNext();
+                while (previousNode.getOpcode() < 0) previousNode = previousNode.getNext();
                 return previousNode;
             }
             previousNode = previousNode.getPrevious();
@@ -99,8 +99,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return null;
     }
 
-    public DirectedPseudograph<Integer, DefaultEdge> getControlFlowGraph(InsnList insns){
-        DirectedPseudograph<Integer, DefaultEdge> controlGraph = new DirectedPseudograph<>(DefaultEdge.class);
+    public DirectedPseudograph<Integer, BooleanEdge> getControlFlowGraph(InsnList insns){
+        DirectedPseudograph<Integer, BooleanEdge> controlGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Iterator<AbstractInsnNode> j = insns.iterator();
         while (j.hasNext()) {
             AbstractInsnNode in = j.next();
@@ -121,7 +121,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                                         AbstractInsnNode destiny = this.findGotoDestiny((JumpInsnNode) target);
                                         if (destiny != null){
                                             controlGraph.addVertex(insns.indexOf(destiny));
-                                            controlGraph.addEdge(insns.indexOf(in), insns.indexOf(destiny));
+                                            controlGraph.addEdge(insns.indexOf(in), insns.indexOf(destiny), new BooleanEdge(EdgeType.TRUE));
                                             break;
                                         }
                                     }
@@ -130,7 +130,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                                             (opTarget >= IRETURN && opTarget <= RETURN)
                                     ) {
                                         controlGraph.addVertex(insns.indexOf(target));
-                                        controlGraph.addEdge(insns.indexOf(in), insns.indexOf(target));
+                                        controlGraph.addEdge(insns.indexOf(in), insns.indexOf(target), new BooleanEdge(EdgeType.TRUE));
                                         break;
                                     }
                                     target = target.getNext();
@@ -150,7 +150,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                         AbstractInsnNode destiny = this.findGotoDestiny((JumpInsnNode) target);
                         if (destiny != null){
                             controlGraph.addVertex(insns.indexOf(destiny));
-                            controlGraph.addEdge(insns.indexOf(in), insns.indexOf(destiny));
+                            controlGraph.addEdge(insns.indexOf(in), insns.indexOf(destiny), new BooleanEdge(EdgeType.FALSE));
                             break;
                         }
                     }
@@ -159,7 +159,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                             (opTarget >= IRETURN && opTarget <= RETURN)
                     ) {
                         controlGraph.addVertex(insns.indexOf(target));
-                        controlGraph.addEdge(insns.indexOf(in), insns.indexOf(target));
+                        controlGraph.addEdge(insns.indexOf(in), insns.indexOf(target), new BooleanEdge(EdgeType.FALSE));
                         break;
                     }
                     target = target.getNext();
@@ -208,11 +208,18 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     continue;
                 }
 
+                try{
+                    System.out.println(this.getControlFlowGraph(insns).toString());
 
-                System.out.println(this.getControlFlowGraph(insns).toString());
+
+                    this.addInstructionsConditionsAndBranches(insns);
 
 
-                this.addInstructionsConditionsAndBranches(insns);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+
 
                 /*
                 Analyzer<BasicValue> a =
