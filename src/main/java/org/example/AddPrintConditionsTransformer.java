@@ -72,7 +72,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     public boolean isPredicateNode(AbstractInsnNode in){
         int opCode = in.getOpcode();
         return ((opCode >= IFEQ && opCode <= IF_ACMPNE) ||
-                (opCode >= IRETURN && opCode <= RETURN));
+                (opCode >= IRETURN && opCode <= RETURN) ||
+                (opCode == ATHROW));
     }
 
     public AbstractInsnNode findGotoDestiny(JumpInsnNode in){
@@ -149,7 +150,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             controlGraph.addVertex(insns.indexOf(nextPredicate));
             controlGraph.addEdge(insns.indexOf(in), insns.indexOf(nextPredicate), new BooleanEdge(EdgeType.DEFAULT));
         }
-        // TODO: throws tambien
         while (j.hasNext()) {
             in = j.next();
             op = in.getOpcode();

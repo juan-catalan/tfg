@@ -30,6 +30,15 @@ public class Main {
     }
 
     @Coverage2Edge
+    public static void pruebaThrows(){
+        int i = 0;
+        if (System.currentTimeMillis() % 2 == 0){
+            throw new RuntimeException("Prueba");
+        }
+        System.out.println("No excepcion");
+    }
+
+    @Coverage2Edge
     public static void main(String[] args) {
         // Index: 7
         if (System.currentTimeMillis() % 2 == 0){
