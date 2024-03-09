@@ -69,6 +69,11 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
     }
 
+    public boolean isPredicateNode(AbstractInsnNode in){
+        int opCode = in.getOpcode();
+        return ((opCode >= IFEQ && opCode <= IF_ACMPNE) ||
+                (opCode >= IRETURN && opCode <= RETURN));
+    }
 
     public AbstractInsnNode findGotoDestiny(JumpInsnNode in){
         if (in.getOpcode() != GOTO) return null;
@@ -79,12 +84,11 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             if ((nextNode instanceof LabelNode) &&
                     target.equals(nextNode)
             ){
+                // Avanzo si es bytecode auxiliar
                 while (nextNode.getOpcode() < 0) nextNode = nextNode.getNext();
-                int opCode = nextNode.getOpcode();
-                while (!((opCode >= IFEQ && opCode <= IF_ACMPNE) ||
-                        (opCode >= IRETURN && opCode <= RETURN))){
+                // Busco que sea nodo predicado
+                while (!isPredicateNode(nextNode)){
                     nextNode = nextNode.getNext();
-                    opCode = nextNode.getOpcode();
                 }
                 return nextNode;
             }
@@ -97,11 +101,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 target.equals(previousNode)
             ){
                 while (previousNode.getOpcode() < 0) previousNode = previousNode.getNext();
-                int opCode = previousNode.getOpcode();
-                while (!((opCode >= IFEQ && opCode <= IF_ACMPNE) ||
-                        (opCode >= IRETURN && opCode <= RETURN))){
+                while (!isPredicateNode(previousNode)){
                     previousNode = previousNode.getNext();
-                    opCode = previousNode.getOpcode();
                 }
                 return previousNode;
             }
@@ -123,8 +124,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
             }
             // Si no lo es comprobar si estamos en un nodo predicado o de fin
-            if ((opTarget >= IFEQ && opTarget <= IF_ACMPNE) ||
-                    (opTarget >= IRETURN && opTarget <= RETURN)
+            if (isPredicateNode(target)
             ) {
                 return target;
             }
@@ -149,7 +149,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             controlGraph.addVertex(insns.indexOf(nextPredicate));
             controlGraph.addEdge(insns.indexOf(in), insns.indexOf(nextPredicate), new BooleanEdge(EdgeType.DEFAULT));
         }
-        // TODO: añadir primera arista
         // TODO: throws tambien
         while (j.hasNext()) {
             in = j.next();
@@ -163,26 +162,10 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     while (true) {
                         if (target instanceof LabelNode){
                             if (((LabelNode) target).equals(label)){
-                                while (target != null){
-                                    int opTarget = target.getOpcode();
-                                    // Si es un goto cuidado revisar
-                                    if (opTarget == GOTO){
-                                        AbstractInsnNode destiny = this.findGotoDestiny((JumpInsnNode) target);
-                                        if (destiny != null){
-                                            controlGraph.addVertex(insns.indexOf(destiny));
-                                            controlGraph.addEdge(insns.indexOf(in), insns.indexOf(destiny), new BooleanEdge(EdgeType.TRUE));
-                                            break;
-                                        }
-                                    }
-                                    // Si no lo es comprobar si estamos en un nodo predicado o de fin
-                                    if ((opTarget >= IFEQ && opTarget <= IF_ACMPNE) ||
-                                            (opTarget >= IRETURN && opTarget <= RETURN)
-                                    ) {
-                                        controlGraph.addVertex(insns.indexOf(target));
-                                        controlGraph.addEdge(insns.indexOf(in), insns.indexOf(target), new BooleanEdge(EdgeType.TRUE));
-                                        break;
-                                    }
-                                    target = target.getNext();
+                                nextPredicate = findNextPredicateNode(target);
+                                if (nextPredicate != null){
+                                    controlGraph.addVertex(insns.indexOf(nextPredicate));
+                                    controlGraph.addEdge(insns.indexOf(in), insns.indexOf(nextPredicate), new BooleanEdge(EdgeType.TRUE));
                                 }
                                 break;
                             }
@@ -190,28 +173,11 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                         target = target.getNext();
                     }
                 }
-                // Busco el siguiente nodo predicado
-                AbstractInsnNode target = in.getNext();
-                while (target != null){
-                    int opTarget = target.getOpcode();
-                    // Si es un goto cuidado revisar
-                    if (opTarget == GOTO){
-                        AbstractInsnNode destiny = this.findGotoDestiny((JumpInsnNode) target);
-                        if (destiny != null){
-                            controlGraph.addVertex(insns.indexOf(destiny));
-                            controlGraph.addEdge(insns.indexOf(in), insns.indexOf(destiny), new BooleanEdge(EdgeType.FALSE));
-                            break;
-                        }
-                    }
-                    // Si no lo es comprobar si estamos en un nodo predicado o de fin
-                    if ((opTarget >= IFEQ && opTarget <= IF_ACMPNE) ||
-                            (opTarget >= IRETURN && opTarget <= RETURN)
-                    ) {
-                        controlGraph.addVertex(insns.indexOf(target));
-                        controlGraph.addEdge(insns.indexOf(in), insns.indexOf(target), new BooleanEdge(EdgeType.FALSE));
-                        break;
-                    }
-                    target = target.getNext();
+                // Busco el siguiente nodo predicado por el camino FALSE
+                nextPredicate = findNextPredicateNode(in);
+                if (nextPredicate != null){
+                    controlGraph.addVertex(insns.indexOf(nextPredicate));
+                    controlGraph.addEdge(insns.indexOf(in), insns.indexOf(nextPredicate), new BooleanEdge(EdgeType.FALSE));
                 }
             }
         }
@@ -221,17 +187,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
-        /*
-        class Node<V extends Value> extends Frame<V> {
-            Set< Node<V> > successors = new HashSet< Node<V> >();
-            public Node(int nLocals, int nStack) {
-                super(nLocals, nStack);
-            }
-            public Node(Frame<? extends V> src) {
-                super(src);
-            }
-        }
-         */
         // System.out.println("I'm the ClassFileTransformer");
         ClassNode cn = new ClassNode(ASM4);
         ClassReader cr = new ClassReader(classfileBuffer);
@@ -267,56 +222,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }catch (Exception e){
                     e.printStackTrace();
                 }
-
-
-
-                /*
-                Analyzer<BasicValue> a =
-                    new Analyzer<BasicValue>(new BasicInterpreter()) {
-                        protected Frame<BasicValue> newFrame(int nLocals, int nStack) {
-                            return new Node<BasicValue>(nLocals, nStack);
-                        }
-                        protected Frame<BasicValue> newFrame(
-                                Frame<? extends BasicValue> src) {
-                            return new Node<BasicValue>(src);
-                        }
-                        protected void newControlFlowEdge(int src, int dst) {
-                            Node<BasicValue> s = (Node<BasicValue>) getFrames()[src];
-                            s.successors.add((Node<BasicValue>) getFrames()[dst]);
-                        }
-                    };
-                try {
-                    a.analyze(cn.name, mn);
-                } catch (AnalyzerException e) {
-                    throw new RuntimeException(e);
-                }
-
-
-                Frame[] frames = a.getFrames();
-                int edges = 0;
-                int nodes = 0;
-                for (int i = 0; i < frames.length; ++i) {
-
-                    if (frames[i] != null) {
-                        int numSuccessors = ((Node) frames[i]).successors.size();
-                        edges += numSuccessors;
-                        nodes += 1;
-                        if (numSuccessors > 1){
-                            System.out.println("Frame " + i + " (" + numSuccessors + ") ");
-                            //for (Node<BasicValue> sucessor: ((Node) frames[i]).successors);
-                            Iterator nodeIterator = ((Node) frames[i]).successors.iterator();
-                            while (nodeIterator.hasNext()){
-                                Node node = (Node) nodeIterator.next();
-                                node.
-                            }
-                            System.out.println("\nFrame " + i + " (" + numSuccessors + ") ");
-                        }
-                    }
-
-
-                }
-                */
-
             }
         }
 
