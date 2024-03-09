@@ -2,5 +2,6 @@ package org.example;
 
 public enum EdgeType {
     TRUE,
-    FALSE
+    FALSE,
+    DEFAULT
 }

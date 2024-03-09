@@ -111,12 +111,49 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return null;
     }
 
+    public AbstractInsnNode findNextPredicateNode(AbstractInsnNode in){
+        AbstractInsnNode target = in.getNext();
+        while (target != null){
+            int opTarget = target.getOpcode();
+            // Si es un goto cuidado revisar
+            if (opTarget == GOTO){
+                AbstractInsnNode destiny = this.findGotoDestiny((JumpInsnNode) target);
+                if (destiny != null){
+                    return destiny;
+                }
+            }
+            // Si no lo es comprobar si estamos en un nodo predicado o de fin
+            if ((opTarget >= IFEQ && opTarget <= IF_ACMPNE) ||
+                    (opTarget >= IRETURN && opTarget <= RETURN)
+            ) {
+                return target;
+            }
+            target = target.getNext();
+        }
+        return null;
+    }
+
     public DirectedPseudograph<Integer, BooleanEdge> getControlFlowGraph(InsnList insns){
         DirectedPseudograph<Integer, BooleanEdge> controlGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Iterator<AbstractInsnNode> j = insns.iterator();
+
+        AbstractInsnNode in = j.next();
+        int op = in.getOpcode();
+        while (op < 0){
+            in = j.next();
+            op = in.getOpcode();
+        }
+        controlGraph.addVertex(insns.indexOf(in));
+        AbstractInsnNode nextPredicate = findNextPredicateNode(in);
+        if (nextPredicate != null){
+            controlGraph.addVertex(insns.indexOf(nextPredicate));
+            controlGraph.addEdge(insns.indexOf(in), insns.indexOf(nextPredicate), new BooleanEdge(EdgeType.DEFAULT));
+        }
+        // TODO: añadir primera arista
+        // TODO: throws tambien
         while (j.hasNext()) {
-            AbstractInsnNode in = j.next();
-            int op = in.getOpcode();
+            in = j.next();
+            op = in.getOpcode();
             if (op >= IFEQ && op <= IF_ACMPNE) {
                 controlGraph.addVertex(insns.indexOf(in));
                 // Busco el label de salto (donde va el programa si se evalua true)

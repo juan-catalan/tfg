@@ -18,6 +18,18 @@ public class Main {
     }
 
     @Coverage2Edge
+    public static void pruebaWhileForCombinado(){
+        int i = 0;
+        while(i < 5){
+            System.out.println("i: ".concat(String.valueOf(i)));
+            for (int j=0; j<5; j++){
+                System.out.println("\nj: ".concat(String.valueOf(j)));
+            }
+            i++;
+        }
+    }
+
+    @Coverage2Edge
     public static void main(String[] args) {
         // Index: 7
         if (System.currentTimeMillis() % 2 == 0){
