@@ -1,25 +1,16 @@
 package org.example;
 
-import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
-import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import org.objectweb.asm.tree.analysis.*;
-import org.objectweb.asm.util.Textifier;
-import org.objectweb.asm.util.TraceClassVisitor;
-import org.objectweb.asm.util.TraceMethodVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -184,6 +175,24 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return controlGraph;
     }
 
+    public void pruebaObtenerCaminos(DirectedPseudograph<Integer, BooleanEdge> grafo){
+        System.out.println("Caminos de profundidad 2:");
+        for (Integer i: grafo.vertexSet()){
+            if (!grafo.incomingEdgesOf(i).isEmpty() && !grafo.outgoingEdgesOf(i).isEmpty()){
+                for (BooleanEdge edgeIn: grafo.incomingEdgesOf(i)){
+                    for (BooleanEdge edgeOut: grafo.outgoingEdgesOf(i)){
+                        System.out.print(grafo.getEdgeSource(edgeIn).toString());
+                        System.out.print(" ----".concat(edgeIn.toString().concat("--> ")));
+                        System.out.print(grafo.getEdgeTarget(edgeIn).toString());
+                        System.out.print(" ----".concat(edgeOut.toString().concat("--> ")));
+                        System.out.print(grafo.getEdgeTarget(edgeOut).toString());
+                        System.out.println();
+                    }
+                }
+            }
+        }
+    }
+
 
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
@@ -213,8 +222,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
 
                 try{
-                    System.out.println(this.getControlFlowGraph(insns).toString());
-
+                    DirectedPseudograph<Integer, BooleanEdge> grafo = this.getControlFlowGraph(insns);
+                    System.out.println(grafo.toString());
+                    pruebaObtenerCaminos(grafo);
 
                     this.addInstructionsConditionsAndBranches(insns);
 
