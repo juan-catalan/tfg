@@ -3,8 +3,7 @@ package org.example;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import org.jgrapht.graph.DirectedPseudograph;
 import org.objectweb.asm.ClassReader;
@@ -15,6 +14,24 @@ import org.objectweb.asm.tree.*;
 import static org.objectweb.asm.Opcodes.*;
 
 public class AddPrintConditionsTransformer implements ClassFileTransformer {
+    static private Map<String, Set<Camino2Edge>> almacenCaminos;
+
+    AddPrintConditionsTransformer (){
+        System.out.println("Prueba constructor");
+        if (almacenCaminos == null) almacenCaminos = new HashMap<>();
+    }
+
+    static public void imprimirCaminos(){
+        almacenCaminos.forEach((metodo, caminos) -> {
+            System.out.println("Clase y metodo: " + metodo);
+            System.out.println("\tNumero de caminos: " + caminos.size());
+            System.out.println("\tCaminos:");
+            for (Camino2Edge camino: caminos){
+                System.out.println("\t\t" + camino);
+            }
+        });
+    }
+
     static public void imprimir(String s){
         System.out.println("imprimiendo: ".concat(s));
     }
@@ -175,22 +192,20 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return controlGraph;
     }
 
-    public void pruebaObtenerCaminos(DirectedPseudograph<Integer, BooleanEdge> grafo){
-        System.out.println("Caminos de profundidad 2:");
+    public Set<Camino2Edge> pruebaObtenerCaminos(DirectedPseudograph<Integer, BooleanEdge> grafo){
+        Set<Camino2Edge> caminos = new HashSet<>();
         for (Integer i: grafo.vertexSet()){
             if (!grafo.incomingEdgesOf(i).isEmpty() && !grafo.outgoingEdgesOf(i).isEmpty()){
                 for (BooleanEdge edgeIn: grafo.incomingEdgesOf(i)){
                     for (BooleanEdge edgeOut: grafo.outgoingEdgesOf(i)){
-                        System.out.print(grafo.getEdgeSource(edgeIn).toString());
-                        System.out.print(" ----".concat(edgeIn.toString().concat("--> ")));
-                        System.out.print(grafo.getEdgeTarget(edgeIn).toString());
-                        System.out.print(" ----".concat(edgeOut.toString().concat("--> ")));
-                        System.out.print(grafo.getEdgeTarget(edgeOut).toString());
-                        System.out.println();
+                        Camino2Edge camino = new Camino2Edge(grafo.getEdgeSource(edgeIn), edgeIn, grafo.getEdgeTarget(edgeIn),
+                                edgeOut, grafo.getEdgeTarget(edgeOut));
+                        caminos.add(camino);
                     }
                 }
             }
         }
+        return caminos;
     }
 
 
@@ -224,7 +239,12 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 try{
                     DirectedPseudograph<Integer, BooleanEdge> grafo = this.getControlFlowGraph(insns);
                     System.out.println(grafo.toString());
-                    pruebaObtenerCaminos(grafo);
+
+                    Set<Camino2Edge> caminos = pruebaObtenerCaminos(grafo);
+                    //System.out.println("Caminos de profundidad 2: " + caminos.size());
+                    //System.out.println(caminos);
+                    almacenCaminos.put(className.concat("." + mn.name).concat("." + mn.desc) ,caminos);
+
 
                     this.addInstructionsConditionsAndBranches(insns);
 

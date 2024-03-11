@@ -61,5 +61,7 @@ public class Main {
                 System.out.println("Milis int impares");
             }
         }
+
+        AddPrintConditionsTransformer.imprimirCaminos();
     }
 }
