@@ -2,6 +2,7 @@ package org.example;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
+import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.*;
 
@@ -32,8 +33,13 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         });
     }
 
+
     static public void imprimir(String s){
         System.out.println("imprimiendo: ".concat(s));
+    }
+
+    static public void markPredicateNode(String metodo, AbstractInsnNode node) {
+
     }
 
     public void addSysOutPrintIns(InsnList il, String message){
@@ -41,7 +47,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 Type.getObjectType("java/io/PrintStream").getDescriptor()));
         il.add(new LdcInsnNode(message));
         il.add(new MethodInsnNode(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V"));
-
     }
 
     public void addInstructionsConditionsAndBranches(InsnList insns){
@@ -51,7 +56,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             int op = in.getOpcode();
             if (op >= IFEQ && op <= IF_ACMPNE) {
                 InsnList il = new InsnList();
-                addSysOutPrintIns(il, "Estoy en una condicion, index: ".concat(String.valueOf(insns.indexOf(in))));
+                //addSysOutPrintIns(il, "Estoy en una condicion, index: ".concat(String.valueOf(insns.indexOf(in))));
+                addSysOutPrintIns(il, "Estoy en una condicion, index: ".concat(String.valueOf(in)));
                 insns.insert(in.getPrevious(), il);
                 // Busco el label de salto (donde va el programa si se evalua true)
                 if (in instanceof JumpInsnNode){
@@ -61,7 +67,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                         if (target instanceof LabelNode){
                             if (((LabelNode) target).equals(label)){
                                 il.clear();
-                                addSysOutPrintIns(il, "Se ha evaluado como true: ".concat(String.valueOf(insns.indexOf(target))));
+                                //addSysOutPrintIns(il, "Se ha evaluado como true: ".concat(String.valueOf(insns.indexOf(target))));
+                                addSysOutPrintIns(il, "Se ha evaluado como true: ".concat(String.valueOf(target)));
                                 insns.insert(target, il);
                                 break;
                             }
@@ -71,7 +78,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
                 // Añado un mensaje a continuación de la comparacion: se ha debido de evaluar como false
                 il.clear();
-                addSysOutPrintIns(il, "Se ha evaluado como false: ".concat(String.valueOf(insns.indexOf(in.getNext()))));
+                //addSysOutPrintIns(il, "Se ha evaluado como false: ".concat(String.valueOf(insns.indexOf(in.getNext()))));
+                addSysOutPrintIns(il, "Se ha evaluado como false: ".concat(String.valueOf(in.getNext())));
                 insns.insert(in, il);
             }
         }
@@ -142,8 +150,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return null;
     }
 
-    public DirectedPseudograph<Integer, BooleanEdge> getControlFlowGraph(InsnList insns){
-        DirectedPseudograph<Integer, BooleanEdge> controlGraph = new DirectedPseudograph<>(BooleanEdge.class);
+    public DirectedPseudograph<AbstractInsnNode, BooleanEdge> getControlFlowGraph(InsnList insns){
+        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Iterator<AbstractInsnNode> j = insns.iterator();
 
         AbstractInsnNode in = j.next();
@@ -152,17 +160,17 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             in = j.next();
             op = in.getOpcode();
         }
-        controlGraph.addVertex(insns.indexOf(in));
+        controlGraph.addVertex(in);
         AbstractInsnNode nextPredicate = findNextPredicateNode(in);
         if (nextPredicate != null){
-            controlGraph.addVertex(insns.indexOf(nextPredicate));
-            controlGraph.addEdge(insns.indexOf(in), insns.indexOf(nextPredicate), new BooleanEdge(EdgeType.DEFAULT));
+            controlGraph.addVertex(nextPredicate);
+            controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.DEFAULT));
         }
         while (j.hasNext()) {
             in = j.next();
             op = in.getOpcode();
             if (op >= IFEQ && op <= IF_ACMPNE) {
-                controlGraph.addVertex(insns.indexOf(in));
+                controlGraph.addVertex(in);
                 // Busco el label de salto (donde va el programa si se evalua true)
                 if (in instanceof JumpInsnNode){
                     LabelNode label = ((JumpInsnNode) in).label;
@@ -172,8 +180,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                             if (((LabelNode) target).equals(label)){
                                 nextPredicate = findNextPredicateNode(target);
                                 if (nextPredicate != null){
-                                    controlGraph.addVertex(insns.indexOf(nextPredicate));
-                                    controlGraph.addEdge(insns.indexOf(in), insns.indexOf(nextPredicate), new BooleanEdge(EdgeType.TRUE));
+                                    controlGraph.addVertex(nextPredicate);
+                                    controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.TRUE));
                                 }
                                 break;
                             }
@@ -184,17 +192,17 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 // Busco el siguiente nodo predicado por el camino FALSE
                 nextPredicate = findNextPredicateNode(in);
                 if (nextPredicate != null){
-                    controlGraph.addVertex(insns.indexOf(nextPredicate));
-                    controlGraph.addEdge(insns.indexOf(in), insns.indexOf(nextPredicate), new BooleanEdge(EdgeType.FALSE));
+                    controlGraph.addVertex(nextPredicate);
+                    controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.FALSE));
                 }
             }
         }
         return controlGraph;
     }
 
-    public Set<Camino2Edge> pruebaObtenerCaminos(DirectedPseudograph<Integer, BooleanEdge> grafo){
+    public Set<Camino2Edge> pruebaObtenerCaminos(DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
         Set<Camino2Edge> caminos = new HashSet<>();
-        for (Integer i: grafo.vertexSet()){
+        for (AbstractInsnNode i: grafo.vertexSet()){
             if (!grafo.incomingEdgesOf(i).isEmpty() && !grafo.outgoingEdgesOf(i).isEmpty()){
                 for (BooleanEdge edgeIn: grafo.incomingEdgesOf(i)){
                     for (BooleanEdge edgeOut: grafo.outgoingEdgesOf(i)){
@@ -237,7 +245,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
 
                 try{
-                    DirectedPseudograph<Integer, BooleanEdge> grafo = this.getControlFlowGraph(insns);
+                    DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = this.getControlFlowGraph(insns);
                     System.out.println(grafo.toString());
 
                     Set<Camino2Edge> caminos = pruebaObtenerCaminos(grafo);

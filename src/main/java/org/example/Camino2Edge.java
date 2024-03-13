@@ -1,12 +1,14 @@
 package org.example;
 
+import org.objectweb.asm.tree.AbstractInsnNode;
+
 import java.util.Objects;
 
 public class Camino2Edge {
-    Integer nodoInicio, nodoMedio, nodoFinal;
+    AbstractInsnNode nodoInicio, nodoMedio, nodoFinal;
     BooleanEdge aristaInicioMedio, aristaMedioFinal;
 
-    public Camino2Edge(Integer nodoIni, BooleanEdge aristaIniMedio, Integer nodoMedio, BooleanEdge aristaMedioFin, Integer nodoFinal){
+    public Camino2Edge(AbstractInsnNode nodoIni, BooleanEdge aristaIniMedio, AbstractInsnNode nodoMedio, BooleanEdge aristaMedioFin, AbstractInsnNode nodoFinal){
         this.nodoInicio = nodoIni;
         this.nodoMedio  = nodoMedio;
         this.nodoFinal = nodoFinal;
