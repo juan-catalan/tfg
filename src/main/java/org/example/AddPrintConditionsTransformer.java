@@ -1,5 +1,7 @@
 package org.example;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.Method;
@@ -11,6 +13,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -38,8 +41,18 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         System.out.println("imprimiendo: ".concat(s));
     }
 
+    // TODO: mover a otra clase
     static public void markPredicateNode(String metodo, AbstractInsnNode node) {
+        System.out.println("Funciona" + metodo);
+        System.out.println("Descriptor" + node);
+    }
 
+    public InsnList addMarkPredicateNode(String metodo, AbstractInsnNode node){
+        InsnList il = new InsnList();
+        il.add(new LdcInsnNode(metodo));
+        il.add(new LdcInsnNode(node));
+        il.add(new MethodInsnNode(INVOKESTATIC, "org/example/AddPrintConditionsTransformer", "markPredicateNode", "(Ljava/lang/String;Lorg/objectweb/asm/tree/AbstractInsnNode;)V"));
+        return il;
     }
 
     public void addSysOutPrintIns(InsnList il, String message){
@@ -49,7 +62,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         il.add(new MethodInsnNode(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V"));
     }
 
-    public void addInstructionsConditionsAndBranches(InsnList insns){
+    public void addInstructionsConditionsAndBranches(String claseYmetodo, InsnList insns){
         Iterator<AbstractInsnNode> j = insns.iterator();
         while (j.hasNext()) {
             AbstractInsnNode in = j.next();
@@ -57,11 +70,13 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             if (op >= IFEQ && op <= IF_ACMPNE) {
                 InsnList il = new InsnList();
                 //addSysOutPrintIns(il, "Estoy en una condicion, index: ".concat(String.valueOf(insns.indexOf(in))));
+                //insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, in));
                 addSysOutPrintIns(il, "Estoy en una condicion, index: ".concat(String.valueOf(in)));
                 insns.insert(in.getPrevious(), il);
                 // Busco el label de salto (donde va el programa si se evalua true)
                 if (in instanceof JumpInsnNode){
                     LabelNode label = ((JumpInsnNode) in).label;
+                    //System.out.println(in.hashCode());
                     AbstractInsnNode target = in.getNext();
                     while (true) {
                         if (target instanceof LabelNode){
@@ -216,9 +231,23 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return caminos;
     }
 
+    // TODO: Para poder saber con seguridad que estoy en un nodo perteneciente al grafo, pensar si sería buena idea hacer la tarea de generar el grafo y de añadir el bytecode a la vez. Para así poder generar identificadores artificiales a los nodos y a las aristas (para no tener que usar hashcode)
 
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
+
+        /*
+        try {
+            TraceClassVisitor cv = new TraceClassVisitor(new PrintWriter(System.out));
+            ClassReader cr = new ClassReader(Prueba.class.getName());
+            cr.accept(cv, 0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+         */
+
+
         // System.out.println("I'm the ClassFileTransformer");
         ClassNode cn = new ClassNode(ASM4);
         ClassReader cr = new ClassReader(classfileBuffer);
@@ -254,7 +283,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     almacenCaminos.put(className.concat("." + mn.name).concat("." + mn.desc) ,caminos);
 
 
-                    this.addInstructionsConditionsAndBranches(insns);
+                    this.addInstructionsConditionsAndBranches(className.concat("." + mn.name).concat("." + mn.desc), insns);
 
 
                 }catch (Exception e){
