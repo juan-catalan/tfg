@@ -20,11 +20,13 @@ import static org.objectweb.asm.Opcodes.*;
 public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private Map<String, Set<Camino2Edge>> almacenCaminos;
     static private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
+    static private Map<String, List<String>> caminosRecorridoos;
 
     AddPrintConditionsTransformer (){
         System.out.println("Prueba constructor");
         if (almacenCaminos == null) almacenCaminos = new HashMap<>();
         if (nodoToInteger == null) nodoToInteger = new HashMap<>();
+        if (caminosRecorridoos == null) caminosRecorridoos = new HashMap<>();
     }
 
     static public void imprimirCaminos(){
@@ -38,22 +40,56 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         });
     }
 
+    static public void imprimirCaminosRecorridos(){
+        caminosRecorridoos.forEach((metodo, caminos) -> {
+            System.out.println("Clase y metodo: " + metodo);
+            System.out.println("\tCaminos recorridos:");
+            System.out.println("\t\t" + Arrays.toString(caminos.toArray()));
+        });
+    }
+
 
     static public void imprimir(String s){
         System.out.println("imprimiendo: ".concat(s));
     }
 
     // TODO: mover a otra clase
-    static public void markPredicateNode(String metodo, AbstractInsnNode node) {
-        System.out.println("Funciona" + metodo);
-        System.out.println("Descriptor" + node);
+    static public void markPredicateNode(String metodo, int nodeId) {
+        caminosRecorridoos.get(metodo).add(String.valueOf(nodeId));
+        // System.out.print(nodeId);
     }
 
-    public InsnList addMarkPredicateNode(String metodo, AbstractInsnNode node){
+    static public void markEndNode(String metodo, int nodeId) {
+        caminosRecorridoos.get(metodo).add(String.valueOf(nodeId).concat("\n"));
+        // System.out.print(nodeId);
+    }
+
+    static public void markEdge(String metodo, String edge) {
+        caminosRecorridoos.get(metodo).add(edge);
+        // System.out.print(" ----" + edge + "--> ");
+    }
+
+    public InsnList addMarkEndNode(String metodo, Integer nodeId){
         InsnList il = new InsnList();
         il.add(new LdcInsnNode(metodo));
-        il.add(new LdcInsnNode(node));
-        il.add(new MethodInsnNode(INVOKESTATIC, "org/example/AddPrintConditionsTransformer", "markPredicateNode", "(Ljava/lang/String;Lorg/objectweb/asm/tree/AbstractInsnNode;)V"));
+        il.add(new LdcInsnNode(nodeId));
+        il.add(new MethodInsnNode(INVOKESTATIC, "org/example/AddPrintConditionsTransformer", "markEndNode", "(Ljava/lang/String;I)V"));
+        return il;
+    }
+
+    public InsnList addMarkPredicateNode(String metodo, Integer nodeId){
+        InsnList il = new InsnList();
+        il.add(new LdcInsnNode(metodo));
+        il.add(new LdcInsnNode(nodeId));
+        il.add(new MethodInsnNode(INVOKESTATIC, "org/example/AddPrintConditionsTransformer", "markPredicateNode", "(Ljava/lang/String;I)V"));
+        return il;
+    }
+
+    public InsnList addMarkEdge(String metodo, EdgeType edge){
+        InsnList il = new InsnList();
+        il.add(new LdcInsnNode(metodo));
+        il.add(new LdcInsnNode(edge.name()));
+        il.add(new MethodInsnNode(INVOKESTATIC, "org/example/AddPrintConditionsTransformer", "markEdge", "(Ljava/lang/String;Ljava/lang/String;)V"));
         return il;
     }
 
@@ -64,10 +100,41 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         il.add(new MethodInsnNode(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V"));
     }
 
-    public void addInstructionsConditionsAndBranches(String claseYmetodo, InsnList insns){
+    public void addInstructionsConditionsAndBranches(String claseYmetodo, InsnList insns, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
         Iterator<AbstractInsnNode> j = insns.iterator();
         while (j.hasNext()) {
             AbstractInsnNode in = j.next();
+            if (grafo.containsVertex(in)){
+                System.out.println(in + " -> " + nodoToInteger.get(claseYmetodo).get(in));
+                // Si es el nodo inicial
+                if (grafo.inDegreeOf(in) == 0) {
+                    insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, nodoToInteger.get(claseYmetodo).get(in)));
+
+                    // Añado el camino default
+                    insns.insert(in, addMarkEdge(claseYmetodo, EdgeType.DEFAULT));
+                }
+                // Si son nodo predicado
+                else if (grafo.outDegreeOf(in) > 0) {
+                    insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, nodoToInteger.get(claseYmetodo).get(in)));
+                    LabelNode label = ((JumpInsnNode) in).label;
+                    AbstractInsnNode target = in.getNext();
+                    while (true) {
+                        if (target instanceof LabelNode){
+                            if (((LabelNode) target).equals(label)){
+                                insns.insert(target, addMarkEdge(claseYmetodo, EdgeType.TRUE));
+                                break;
+                            }
+                        }
+                        target = target.getNext();
+                    }
+                    // Añado el camino del false
+                    insns.insert(in, addMarkEdge(claseYmetodo, EdgeType.FALSE));
+                }
+                // Si son nodos de finalizacion
+                else {
+                    insns.insertBefore(in, addMarkEndNode(claseYmetodo, nodoToInteger.get(claseYmetodo).get(in)));
+                }
+            }
             /*
             int op = in.getOpcode();
             if (op >= IFEQ && op <= IF_ACMPNE) {
@@ -268,7 +335,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         cr.accept(cn, 0);
         for (MethodNode mn : (List<MethodNode>) cn.methods) {
             String idMetodo = className.concat("." + mn.name).concat("." + mn.desc);
-            nodoToInteger.put(idMetodo, new HashMap<>());
 
 
             // Check if the method is annotated with our custom one
@@ -279,6 +345,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
             }
             if (isAnnotated) {
+                nodoToInteger.put(idMetodo, new HashMap<>());
+                caminosRecorridoos.put(idMetodo, new ArrayList<>());
                 System.out.println("I'm transforming my own classes: ".concat(className));
                 System.out.println("I'm transforming the method: ".concat(mn.name));
                 if ("<init>".equals(mn.name) || "<clinit>".equals(mn.name)) {
@@ -299,7 +367,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     almacenCaminos.put(idMetodo ,caminos);
 
 
-                    this.addInstructionsConditionsAndBranches(idMetodo, insns);
+                    this.addInstructionsConditionsAndBranches(idMetodo, insns, grafo);
 
 
                 }catch (Exception e){

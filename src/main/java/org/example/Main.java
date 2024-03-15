@@ -39,7 +39,7 @@ public class Main {
     }
 
     @Coverage2Edge
-    public static void main(String[] args) {
+    public static void antiguoMain(){
         // Index: 7
         if (System.currentTimeMillis() % 2 == 0){
             System.out.println("Milis ext pares");
@@ -61,8 +61,20 @@ public class Main {
                 System.out.println("Milis int impares");
             }
         }
+    }
+
+
+    public static void main(String[] args) {
+        antiguoMain();
+
+        pruebaFor();
+
+        pruebaWhile();
+
+        antiguoMain();
 
         AddPrintConditionsTransformer.imprimirCaminos();
+        AddPrintConditionsTransformer.imprimirCaminosRecorridos();
     }
 
 }
