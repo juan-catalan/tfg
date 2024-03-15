@@ -295,14 +295,18 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return controlGraph;
     }
 
-    public Set<Camino2Edge> pruebaObtenerCaminos(DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
+    public Set<Camino2Edge> pruebaObtenerCaminos(String idMetodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
         Set<Camino2Edge> caminos = new HashSet<>();
         for (AbstractInsnNode i: grafo.vertexSet()){
             if (!grafo.incomingEdgesOf(i).isEmpty() && !grafo.outgoingEdgesOf(i).isEmpty()){
                 for (BooleanEdge edgeIn: grafo.incomingEdgesOf(i)){
                     for (BooleanEdge edgeOut: grafo.outgoingEdgesOf(i)){
-                        Camino2Edge camino = new Camino2Edge(grafo.getEdgeSource(edgeIn), edgeIn, grafo.getEdgeTarget(edgeIn),
-                                edgeOut, grafo.getEdgeTarget(edgeOut));
+                        Integer nodoInicio = nodoToInteger.get(idMetodo).get(grafo.getEdgeSource(edgeIn));
+                        Integer nodoMedio = nodoToInteger.get(idMetodo).get(grafo.getEdgeTarget(edgeIn));
+                        Integer nodoFinal = nodoToInteger.get(idMetodo).get(grafo.getEdgeTarget(edgeOut));
+
+                        Camino2Edge camino = new Camino2Edge(nodoInicio, edgeIn, nodoMedio,
+                                edgeOut, nodoFinal);
                         caminos.add(camino);
                     }
                 }
@@ -361,7 +365,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = this.getControlFlowGraph(insns, idMetodo);
                     System.out.println(grafo.toString());
 
-                    Set<Camino2Edge> caminos = pruebaObtenerCaminos(grafo);
+                    Set<Camino2Edge> caminos = pruebaObtenerCaminos(idMetodo, grafo);
                     //System.out.println("Caminos de profundidad 2: " + caminos.size());
                     //System.out.println(caminos);
                     almacenCaminos.put(idMetodo ,caminos);
