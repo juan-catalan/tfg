@@ -1,10 +1,7 @@
 package org.example;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
-import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.*;
 
@@ -13,20 +10,21 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import org.objectweb.asm.util.TraceClassVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
 public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private Map<String, Set<Camino2Edge>> almacenCaminos;
     static private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
-    static private Map<String, List<String>> caminosRecorridoos;
+    static private Map<String, Set<Camino2Edge>> caminosRecorridos;
+    static private Map<String, Camino2Edge> caminoActual;
 
     AddPrintConditionsTransformer (){
         System.out.println("Prueba constructor");
         if (almacenCaminos == null) almacenCaminos = new HashMap<>();
         if (nodoToInteger == null) nodoToInteger = new HashMap<>();
-        if (caminosRecorridoos == null) caminosRecorridoos = new HashMap<>();
+        if (caminosRecorridos == null) caminosRecorridos = new HashMap<>();
+        if (caminoActual == null) caminoActual = new HashMap<>();
     }
 
     static public void imprimirCaminos(){
@@ -41,9 +39,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     }
 
     static public void imprimirCaminosRecorridos(){
-        caminosRecorridoos.forEach((metodo, caminos) -> {
+        caminosRecorridos.forEach((metodo, caminos) -> {
             System.out.println("Clase y metodo: " + metodo);
-            System.out.println("\tCaminos recorridos:");
+            System.out.println("\tCaminos recorridos: " + caminos.size());
             System.out.println("\t\t" + Arrays.toString(caminos.toArray()));
         });
     }
@@ -55,17 +53,41 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     // TODO: mover a otra clase
     static public void markPredicateNode(String metodo, int nodeId) {
-        caminosRecorridoos.get(metodo).add(String.valueOf(nodeId));
+        Camino2Edge camino = caminoActual.get(metodo);
+        camino.addNode(nodeId);
+        if (camino.isComplete()){
+            caminosRecorridos.get(metodo).add(camino);
+            caminoActual.put(metodo, camino.nextHalf());
+        }
+        else {
+            caminoActual.put(metodo, camino);
+        }
         // System.out.print(nodeId);
     }
 
     static public void markEndNode(String metodo, int nodeId) {
-        caminosRecorridoos.get(metodo).add(String.valueOf(nodeId).concat("\n"));
+        Camino2Edge camino = caminoActual.get(metodo);
+        camino.addNode(nodeId);
+        if (camino.isComplete()){
+            caminosRecorridos.get(metodo).add(camino);
+            caminoActual.put(metodo, camino.nextHalf());
+        }
+        else {
+            caminoActual.put(metodo, camino);
+        }
         // System.out.print(nodeId);
     }
 
     static public void markEdge(String metodo, String edge) {
-        caminosRecorridoos.get(metodo).add(edge);
+        Camino2Edge camino = caminoActual.get(metodo);
+        camino.addEdge(new BooleanEdge(EdgeType.valueOf(edge)));
+        if (camino.isComplete()){
+            caminosRecorridos.get(metodo).add(camino);
+            caminoActual.put(metodo, camino.nextHalf());
+        }
+        else {
+            caminoActual.put(metodo, camino);
+        }
         // System.out.print(" ----" + edge + "--> ");
     }
 
@@ -350,7 +372,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             }
             if (isAnnotated) {
                 nodoToInteger.put(idMetodo, new HashMap<>());
-                caminosRecorridoos.put(idMetodo, new ArrayList<>());
+                caminosRecorridos.put(idMetodo, new HashSet<>());
+                caminoActual.put(idMetodo, new Camino2Edge(null, null, null, null, null));
                 System.out.println("I'm transforming my own classes: ".concat(className));
                 System.out.println("I'm transforming the method: ".concat(mn.name));
                 if ("<init>".equals(mn.name) || "<clinit>".equals(mn.name)) {

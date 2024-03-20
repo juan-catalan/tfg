@@ -16,6 +16,26 @@ public class Camino2Edge {
         this.aristaMedioFinal = aristaMedioFin;
     }
 
+    public boolean isComplete(){
+        return nodoInicio != null && nodoMedio != null && nodoFinal != null &&
+                aristaInicioMedio != null && aristaMedioFinal != null;
+    }
+
+    public Camino2Edge nextHalf (){
+        return new Camino2Edge(nodoMedio, aristaMedioFinal, nodoFinal, null, null);
+    }
+
+    public void addNode(Integer node){
+        if (nodoInicio == null) nodoInicio = node;
+        else if (nodoMedio == null) nodoMedio = node;
+        else if (nodoFinal == null) nodoFinal = node;
+    }
+
+    public void addEdge(BooleanEdge edge){
+        if (aristaInicioMedio == null) aristaInicioMedio = edge;
+        else if (aristaMedioFinal == null) aristaMedioFinal = edge;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

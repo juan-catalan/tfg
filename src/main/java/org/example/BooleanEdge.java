@@ -2,6 +2,8 @@ package org.example;
 
 import org.jgrapht.graph.DefaultEdge;
 
+import java.util.Objects;
+
 public class BooleanEdge extends DefaultEdge {
     private EdgeType type;
 
@@ -24,5 +26,18 @@ public class BooleanEdge extends DefaultEdge {
     public String toString()
     {
         return type.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BooleanEdge that = (BooleanEdge) o;
+        return type == that.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type);
     }
 }
