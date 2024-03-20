@@ -14,6 +14,8 @@ import org.objectweb.asm.tree.*;
 import static org.objectweb.asm.Opcodes.*;
 
 public class AddPrintConditionsTransformer implements ClassFileTransformer {
+    static final boolean DEBUG = false;
+    static private Map<String, DirectedPseudograph<Integer, BooleanEdge>> grafosMetodos;
     static private Map<String, Set<Camino2Edge>> almacenCaminos;
     static private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
     static private Map<String, Set<Camino2Edge>> caminosRecorridos;
@@ -34,11 +36,12 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     }
 
     AddPrintConditionsTransformer (){
-        System.out.println("Prueba constructor");
+        if (DEBUG) System.out.println("Prueba constructor");
         if (almacenCaminos == null) almacenCaminos = new HashMap<>();
         if (nodoToInteger == null) nodoToInteger = new HashMap<>();
         if (caminosRecorridos == null) caminosRecorridos = new HashMap<>();
         if (caminoActual == null) caminoActual = new HashMap<>();
+        if (grafosMetodos == null) grafosMetodos = new HashMap<>();
         ShutDownHook jvmShutdownHook = new ShutDownHook();
         Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
     }
@@ -68,6 +71,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
             Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
             System.out.println("Clase y metodo: " + metodo);
+            System.out.println("\tGrafo: " + grafosMetodos.get(metodo));
             System.out.println("\tNumero de caminos total: " + todosCaminos.size());
             System.out.println("\t\tCaminos: [");
             todosCaminos.forEach((camino -> {
@@ -164,7 +168,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         while (j.hasNext()) {
             AbstractInsnNode in = j.next();
             if (grafo.containsVertex(in)){
-                System.out.println(in + " -> " + nodoToInteger.get(claseYmetodo).get(in));
+                if (DEBUG) System.out.println(in + " -> " + nodoToInteger.get(claseYmetodo).get(in));
                 // Si es el nodo inicial
                 if (grafo.inDegreeOf(in) == 0) {
                     insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, nodoToInteger.get(claseYmetodo).get(in)));
@@ -194,40 +198,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     insns.insertBefore(in, addMarkEndNode(claseYmetodo, nodoToInteger.get(claseYmetodo).get(in)));
                 }
             }
-            /*
-            int op = in.getOpcode();
-            if (op >= IFEQ && op <= IF_ACMPNE) {
-                InsnList il = new InsnList();
-                //addSysOutPrintIns(il, "Estoy en una condicion, index: ".concat(String.valueOf(insns.indexOf(in))));
-                //insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, in));
-                addSysOutPrintIns(il, "Estoy en una condicion, index: ".concat(String.valueOf(in)));
-                insns.insert(in.getPrevious(), il);
-                // Busco el label de salto (donde va el programa si se evalua true)
-                if (in instanceof JumpInsnNode){
-                    LabelNode label = ((JumpInsnNode) in).label;
-                    System.out.println(in.hashCode());
-                    AbstractInsnNode target = in.getNext();
-                    while (true) {
-                        if (target instanceof LabelNode){
-                            if (((LabelNode) target).equals(label)){
-                                il.clear();
-                                //addSysOutPrintIns(il, "Se ha evaluado como true: ".concat(String.valueOf(insns.indexOf(target))));
-                                addSysOutPrintIns(il, "Se ha evaluado como true: ".concat(String.valueOf(target)));
-                                insns.insert(target, il);
-                                break;
-                            }
-                        }
-                        target = target.getNext();
-                    }
-                }
-                // Añado un mensaje a continuación de la comparacion: se ha debido de evaluar como false
-                il.clear();
-                //addSysOutPrintIns(il, "Se ha evaluado como false: ".concat(String.valueOf(insns.indexOf(in.getNext()))));
-                addSysOutPrintIns(il, "Se ha evaluado como false: ".concat(String.valueOf(in.getNext())));
-                insns.insert(in, il);
-            }
-
-             */
         }
     }
 
@@ -236,6 +206,20 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return ((opCode >= IFEQ && opCode <= IF_ACMPNE) ||
                 (opCode >= IRETURN && opCode <= RETURN) ||
                 (opCode == ATHROW));
+    }
+
+    public DirectedPseudograph<Integer, BooleanEdge> transformGraphToInteger(String metodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
+        DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
+        Map<AbstractInsnNode, Integer> nodeIntegerMap = nodoToInteger.get(metodo);
+        for (AbstractInsnNode nodo: grafo.vertexSet()){
+            newGraph.addVertex(nodeIntegerMap.get(nodo));
+        }
+        for (BooleanEdge edge: grafo.edgeSet()){
+            newGraph.addEdge(nodeIntegerMap.get(grafo.getEdgeSource(edge)),
+                    nodeIntegerMap.get(grafo.getEdgeTarget(edge)),
+                    new BooleanEdge(edge.getType()));
+        }
+        return newGraph;
     }
 
     public AbstractInsnNode findGotoDestiny(JumpInsnNode in){
@@ -303,11 +287,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         Map<AbstractInsnNode, Integer> nodeIntegerMap = nodoToInteger.get(idMetodo);
 
         AbstractInsnNode in = j.next();
-        int op = in.getOpcode();
-        while (op < 0){
-            in = j.next();
-            op = in.getOpcode();
-        }
         if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) indiceNodo++;
         controlGraph.addVertex(in);
         AbstractInsnNode nextPredicate = findNextPredicateNode(in);
@@ -318,7 +297,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
         while (j.hasNext()) {
             in = j.next();
-            op = in.getOpcode();
+            int op = in.getOpcode();
             if (op >= IFEQ && op <= IF_ACMPNE) {
                 if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) indiceNodo++;
                 controlGraph.addVertex(in);
@@ -350,7 +329,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
             }
         }
-        System.out.println(nodeIntegerMap);
+        if (DEBUG) System.out.println(nodeIntegerMap);
         return controlGraph;
     }
 
@@ -411,8 +390,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 nodoToInteger.put(idMetodo, new HashMap<>());
                 caminosRecorridos.put(idMetodo, new HashSet<>());
                 caminoActual.put(idMetodo, new Camino2Edge(null, null, null, null, null));
-                System.out.println("I'm transforming my own classes: ".concat(className));
-                System.out.println("I'm transforming the method: ".concat(mn.name));
+                if (DEBUG) System.out.println("I'm transforming my own classes: ".concat(className));
+                if (DEBUG) System.out.println("I'm transforming the method: ".concat(mn.name));
                 if ("<init>".equals(mn.name) || "<clinit>".equals(mn.name)) {
                     continue;
                 }
@@ -423,11 +402,13 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
                 try{
                     DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = this.getControlFlowGraph(insns, idMetodo);
-                    System.out.println(grafo.toString());
+                    if (DEBUG) System.out.println(grafo.toString());
+                    grafosMetodos.put(idMetodo, transformGraphToInteger(idMetodo, grafo));
+
 
                     Set<Camino2Edge> caminos = pruebaObtenerCaminos(idMetodo, grafo);
                     //System.out.println("Caminos de profundidad 2: " + caminos.size());
-                    System.out.println(caminos);
+                    if (DEBUG) System.out.println(caminos);
                     almacenCaminos.put(idMetodo ,caminos);
 
 

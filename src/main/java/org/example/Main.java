@@ -2,15 +2,14 @@ package org.example;
 
 public class Main {
     @Coverage2Edge
-    public static void pruebaFor(){
-        for (int i=0; i<5; i++){
+    public static void pruebaFor(int j){
+        for (int i=0; i<j; i++){
             System.out.println(i);
         }
     }
 
     @Coverage2Edge
-    public static void pruebaWhile(){
-        int i = 0;
+    public static void pruebaWhile(int i){
         while(i < 5){
             System.out.println(i);
             i++;
@@ -18,22 +17,20 @@ public class Main {
     }
 
     @Coverage2Edge
-    public static void pruebaWhileForCombinado(){
-        int i = 0;
+    public static void pruebaWhileForCombinado(int i, int j){
         while(i < 5){
             System.out.println("i: ".concat(String.valueOf(i)));
-            for (int j=0; j<5; j++){
-                System.out.println("\nj: ".concat(String.valueOf(j)));
+            for (int k=0; k<j; k++){
+                System.out.println("\nj: ".concat(String.valueOf(k)));
             }
             i++;
         }
     }
 
     @Coverage2Edge
-    public static void pruebaThrows(){
-        int i = 0;
-        if (System.currentTimeMillis() % 2 == 0){
-            throw new RuntimeException("Prueba");
+    public static void pruebaThrows(int i){
+        if (i % 2 == 0){
+            throw new RuntimeException("Excepcion");
         }
         System.out.println("No excepcion");
     }
@@ -47,39 +44,46 @@ public class Main {
     }
 
     @Coverage2Edge
-    public static void antiguoMain(){
+    public static void antiguoMain(int i, int j){
         // Index: 7
-        if (System.currentTimeMillis() % 2 == 0){
-            System.out.println("Milis ext pares");
+        if (i % 2 == 0){
+            System.out.println("i par");
             // Index: 26
-            if (System.currentTimeMillis() % 2 == 0){
-                System.out.println("Milis int pares");
+            if (j % 2 == 0){
+                System.out.println("j par");
             }
             else {
-                System.out.println("Milis int impares");
+                System.out.println("j impar");
             }
         }
         else {
-            System.out.println("Milis ext impares");
+            System.out.println("i impar");
             // Index: 65
-            if (System.currentTimeMillis() % 2 == 0){
-                System.out.println("Milis int pares");
+            if (j % 2 == 0){
+                System.out.println("j par");
             }
             else {
-                System.out.println("Milis int impares");
+                System.out.println("j impar");
             }
         }
     }
 
 
     public static void main(String[] args) {
-        antiguoMain();
+        antiguoMain(2,1);
 
-        pruebaFor();
+        pruebaFor(5);
 
-        pruebaWhile();
+        pruebaWhile(4);
 
-        antiguoMain();
+        try {
+            pruebaThrows(2);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+        };
+
+
+        antiguoMain(1,2);
     }
 
 }
