@@ -28,19 +28,4 @@ public class BooleanEdge extends DefaultEdge {
         return type.toString();
     }
 
-    /*
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        BooleanEdge that = (BooleanEdge) o;
-        return type == that.type;
-    }
-
-     */
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(type);
-    }
 }

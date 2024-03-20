@@ -22,7 +22,12 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     private static class ShutDownHook extends Thread {
         public void run() {
+            long startTime = System.nanoTime();
             AddPrintConditionsTransformer.imprimirInforme();
+            long endTime = System.nanoTime();
+
+            long duration = (endTime - startTime) / 1000000;  //divide by 1000000 to get milliseconds.
+            System.out.println(duration + " ms to execute the shutdown hook");
             //AddPrintConditionsTransformer.imprimirCaminos();
             //AddPrintConditionsTransformer.imprimirCaminosRecorridos();
         }
@@ -58,14 +63,29 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     }
 
     static public void imprimirInforme(){
+        System.out.println("---------------- Ejecucion terminada ----------------");
         for (String metodo: almacenCaminos.keySet()){
             Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
             Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
             System.out.println("Clase y metodo: " + metodo);
             System.out.println("\tNumero de caminos total: " + todosCaminos.size());
-            System.out.println("\t\tCaminos: " + Arrays.toString(todosCaminos.toArray()));
+            System.out.println("\t\tCaminos: [");
+            todosCaminos.forEach((camino -> {
+                System.out.println("\t\t\t" + camino);
+            }));
+            System.out.println("\t\t]");
             System.out.println("\tNumero de caminos cubiertos: " + recorridosCaminos.size());
-            System.out.println("\t\tCaminos: " + Arrays.toString(recorridosCaminos.toArray()));
+            System.out.println("\t\tCaminos: [");
+            recorridosCaminos.forEach((camino -> {
+                System.out.println("\t\t\t" + camino);
+            }));
+            System.out.println("\t\t]");
+            System.out.println("\tNumero de caminos sin cubrir: " + (todosCaminos.size()-recorridosCaminos.size()));
+            System.out.println("\t\tCaminos: [");
+            todosCaminos.forEach((camino -> {
+                if (!recorridosCaminos.contains(camino)) System.out.println("\t\t\t" + camino);
+            }));
+            System.out.println("\t\t]");
         }
     }
 
@@ -90,17 +110,14 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         camino.addNode(nodeId);
         if (camino.isComplete()){
             caminosRecorridos.get(metodo).add(camino);
-            caminoActual.put(metodo, camino.nextHalf());
         }
-        else {
-            caminoActual.put(metodo, camino);
-        }
+        caminoActual.put(metodo, new Camino2Edge(null,  null, null,  null, null));
         // System.out.print(nodeId);
     }
 
     static public void markEdge(String metodo, String edge) {
         Camino2Edge camino = caminoActual.get(metodo);
-        camino.addEdge(new BooleanEdge(EdgeType.valueOf(edge)));
+        camino.addEdge(EdgeType.valueOf(edge));
         if (camino.isComplete()){
             caminosRecorridos.get(metodo).add(camino);
             caminoActual.put(metodo, camino.nextHalf());
@@ -347,8 +364,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                         Integer nodoMedio = nodoToInteger.get(idMetodo).get(grafo.getEdgeTarget(edgeIn));
                         Integer nodoFinal = nodoToInteger.get(idMetodo).get(grafo.getEdgeTarget(edgeOut));
 
-                        Camino2Edge camino = new Camino2Edge(nodoInicio, edgeIn, nodoMedio,
-                                edgeOut, nodoFinal);
+                        Camino2Edge camino = new Camino2Edge(nodoInicio, edgeIn.getType(), nodoMedio,
+                                edgeOut.getType(), nodoFinal);
                         caminos.add(camino);
                     }
                 }

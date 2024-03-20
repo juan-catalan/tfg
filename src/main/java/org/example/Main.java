@@ -39,6 +39,14 @@ public class Main {
     }
 
     @Coverage2Edge
+    public static void pruebaIfConAnd(int i){
+        if (i%2 == 0 && i%3 ==0){
+            System.out.println("Multiplo de 2 y 3");
+        }
+        System.out.println("No multiplo");
+    }
+
+    @Coverage2Edge
     public static void antiguoMain(){
         // Index: 7
         if (System.currentTimeMillis() % 2 == 0){

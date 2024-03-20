@@ -5,9 +5,9 @@ import java.util.Objects;
 
 public class Camino2Edge {
     Integer nodoInicio, nodoMedio, nodoFinal;
-    BooleanEdge aristaInicioMedio, aristaMedioFinal;
+    EdgeType aristaInicioMedio, aristaMedioFinal;
 
-    public Camino2Edge(Integer nodoIni, BooleanEdge aristaIniMedio, Integer nodoMedio, BooleanEdge aristaMedioFin, Integer nodoFinal){
+    public Camino2Edge(Integer nodoIni, EdgeType aristaIniMedio, Integer nodoMedio, EdgeType aristaMedioFin, Integer nodoFinal){
         this.nodoInicio = nodoIni;
         this.nodoMedio  = nodoMedio;
         this.nodoFinal = nodoFinal;
@@ -31,7 +31,7 @@ public class Camino2Edge {
         else if (nodoFinal == null) nodoFinal = node;
     }
 
-    public void addEdge(BooleanEdge edge){
+    public void addEdge(EdgeType edge){
         if (aristaInicioMedio == null) aristaInicioMedio = edge;
         else if (aristaMedioFinal == null) aristaMedioFinal = edge;
     }
