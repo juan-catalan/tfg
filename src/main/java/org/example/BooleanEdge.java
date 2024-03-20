@@ -28,6 +28,7 @@ public class BooleanEdge extends DefaultEdge {
         return type.toString();
     }
 
+    /*
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -35,6 +36,8 @@ public class BooleanEdge extends DefaultEdge {
         BooleanEdge that = (BooleanEdge) o;
         return type == that.type;
     }
+
+     */
 
     @Override
     public int hashCode() {

@@ -72,9 +72,6 @@ public class Main {
         pruebaWhile();
 
         antiguoMain();
-
-        AddPrintConditionsTransformer.imprimirCaminos();
-        AddPrintConditionsTransformer.imprimirCaminosRecorridos();
     }
 
 }

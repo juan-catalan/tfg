@@ -19,12 +19,23 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private Map<String, Set<Camino2Edge>> caminosRecorridos;
     static private Map<String, Camino2Edge> caminoActual;
 
+
+    private static class ShutDownHook extends Thread {
+        public void run() {
+            AddPrintConditionsTransformer.imprimirInforme();
+            //AddPrintConditionsTransformer.imprimirCaminos();
+            //AddPrintConditionsTransformer.imprimirCaminosRecorridos();
+        }
+    }
+
     AddPrintConditionsTransformer (){
         System.out.println("Prueba constructor");
         if (almacenCaminos == null) almacenCaminos = new HashMap<>();
         if (nodoToInteger == null) nodoToInteger = new HashMap<>();
         if (caminosRecorridos == null) caminosRecorridos = new HashMap<>();
         if (caminoActual == null) caminoActual = new HashMap<>();
+        ShutDownHook jvmShutdownHook = new ShutDownHook();
+        Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
     }
 
     static public void imprimirCaminos(){
@@ -46,10 +57,19 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         });
     }
 
-
-    static public void imprimir(String s){
-        System.out.println("imprimiendo: ".concat(s));
+    static public void imprimirInforme(){
+        for (String metodo: almacenCaminos.keySet()){
+            Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
+            Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
+            System.out.println("Clase y metodo: " + metodo);
+            System.out.println("\tNumero de caminos total: " + todosCaminos.size());
+            System.out.println("\t\tCaminos: " + Arrays.toString(todosCaminos.toArray()));
+            System.out.println("\tNumero de caminos cubiertos: " + recorridosCaminos.size());
+            System.out.println("\t\tCaminos: " + Arrays.toString(recorridosCaminos.toArray()));
+        }
     }
+
+
 
     // TODO: mover a otra clase
     static public void markPredicateNode(String metodo, int nodeId) {
@@ -390,7 +410,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
                     Set<Camino2Edge> caminos = pruebaObtenerCaminos(idMetodo, grafo);
                     //System.out.println("Caminos de profundidad 2: " + caminos.size());
-                    //System.out.println(caminos);
+                    System.out.println(caminos);
                     almacenCaminos.put(idMetodo ,caminos);
 
 
