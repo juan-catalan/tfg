@@ -1,5 +1,6 @@
 package org.example;
 
+import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
@@ -10,17 +11,21 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
 public class AddPrintConditionsTransformer implements ClassFileTransformer {
-    static final boolean DEBUG = false;
+    static boolean DEBUG = true;
     static private Map<String, DirectedPseudograph<Integer, BooleanEdge>> grafosMetodos;
     static private Map<String, Set<Camino2Edge>> almacenCaminos;
     static private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
     static private Map<String, Set<Camino2Edge>> caminosRecorridos;
     static private Map<String, Camino2Edge> caminoActual;
 
+    public void addNodoToIntger(String nombre){
+        nodoToInteger.put(nombre, new HashMap<>());
+    }
 
     private static class ShutDownHook extends Thread {
         public void run() {
@@ -36,6 +41,11 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     }
 
     AddPrintConditionsTransformer (){
+        new AddPrintConditionsTransformer(true);
+    }
+
+    AddPrintConditionsTransformer (boolean debug){
+        DEBUG = debug;
         if (DEBUG) System.out.println("Prueba constructor");
         if (almacenCaminos == null) almacenCaminos = new HashMap<>();
         if (nodoToInteger == null) nodoToInteger = new HashMap<>();
@@ -74,9 +84,18 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             System.out.println("\tGrafo: " + grafosMetodos.get(metodo));
             System.out.println("\tNumero de caminos total: " + todosCaminos.size());
             System.out.println("\t\tCaminos: [");
-            todosCaminos.forEach((camino -> {
-                System.out.println("\t\t\t" + camino);
-            }));
+            if (DEBUG){
+                String[] prueba = todosCaminos.stream().map(camino2Edge -> camino2Edge.toString()).toArray(String[]::new);
+                Arrays.sort(prueba);
+                for (int i=0; i<prueba.length; i++){
+                    System.out.println("\t\t\t" + prueba[i]);
+                }
+            }
+            else {
+                todosCaminos.forEach((camino -> {
+                    System.out.println("\t\t\t" + camino);
+                }));
+            }
             System.out.println("\t\t]");
             System.out.println("\tNumero de caminos cubiertos: " + recorridosCaminos.size());
             System.out.println("\t\tCaminos: [");

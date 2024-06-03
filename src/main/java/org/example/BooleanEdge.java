@@ -28,4 +28,10 @@ public class BooleanEdge extends DefaultEdge {
         return type.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BooleanEdge that)) return false;
+        return super.equals(o) && type.equals(that.getType());
+    }
 }
