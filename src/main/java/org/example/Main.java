@@ -1,5 +1,10 @@
 package org.example;
 
+
+import org.example.ejerciciosExamen.curso1415.Convocatoria2;
+import org.example.ejerciciosExamen.curso1516.Convocatoria1;
+
+
 public class Main {
     @Coverage2Edge
     public static void pruebaFor(int j){
@@ -81,6 +86,10 @@ public class Main {
         }catch (Exception e){
             System.out.println(e.getMessage());
         };
+
+        Convocatoria2.imagen(2);
+        Convocatoria1.esPrimo(1);
+        org.example.ejerciciosExamen.curso1617.Convocatoria1.buscar(new int[]{1,2,3,5}, 1);
 
 
         antiguoMain(1,2);
