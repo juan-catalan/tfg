@@ -1,6 +1,7 @@
 package org.example;
 
 import org.jgrapht.graph.DirectedPseudograph;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -44,26 +45,34 @@ class AddPrintConditionsTransformerTest {
 
         Integer vertex = controlFlowGraphInt.vertexSet().toArray(new Integer[controlFlowGraphInt.vertexSet().size()])[0];
 
-        getAdjacencyMatrix(controlFlowGraphInt);
-        // assertTrue(new AHURootedTreeIsomorphismInspector(controlFlowGraphInt, vertex, controlFlowGraphInt, vertex).isomorphismExists());
+        AdjacencyMatrix adjacencyMatrix = getAdjacencyMatrix(controlFlowGraphInt);
+        AdjacencyMatrix adjacencyMatrixCopy = adjacencyMatrix.clone();
+        System.out.println("----Matriz adyacencia-----");
+        System.out.println(adjacencyMatrix);
+
+        Set<AdjacencyMatrix> permutaciones = adjacencyMatrixCopy.getAllPermutations();
+        System.out.println(permutaciones.size());
+        System.out.println(permutaciones);
+        // assertTrue(adjacencyMatrix.isPermutation());
     }
 
-    void getAdjacencyMatrix(DirectedPseudograph<Integer, BooleanEdge> graph){
+    AdjacencyMatrix getAdjacencyMatrix(DirectedPseudograph<Integer, BooleanEdge> graph){
         AdjacencyMatrix adjacencyMatrix = new AdjacencyMatrix();
         for (Integer vertex: graph.vertexSet()){
+            adjacencyMatrix.addRowByIndex(vertex);
             for (Integer otherVertex: graph.vertexSet()){
-                System.out.print(vertex + " ");
-                System.out.print(otherVertex + ": ");
                 Set<BooleanEdge> edges = graph.getAllEdges(vertex, otherVertex);
                 for (BooleanEdge edge: edges){
                     adjacencyMatrix.addAdjacencyToIndex(vertex, otherVertex, edge.getType());
-                    System.out.print(edge.getType());
                 }
-                System.out.println();
             }
         }
-        System.out.println("----Matriz adyacencia-----");
-        System.out.println(adjacencyMatrix.toString());
+        return adjacencyMatrix;
+    }
+
+    @Test
+    void testPruebaFor() {
+        verificarNumVerticesAristas(org.example.Main.class, "pruebaFor", 3, 3);
     }
 
     @Test
