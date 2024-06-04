@@ -50,9 +50,11 @@ class AddPrintConditionsTransformerTest {
         System.out.println("----Matriz adyacencia-----");
         System.out.println(adjacencyMatrix);
 
-        Set<AdjacencyMatrix> permutaciones = adjacencyMatrixCopy.getAllPermutations();
-        System.out.println(permutaciones.size());
-        System.out.println(permutaciones);
+        assertTrue(adjacencyMatrix.isAPermutationOf(adjacencyMatrixCopy), "Los grafos no coinciden");
+
+        //Set<AdjacencyMatrix> permutaciones = adjacencyMatrixCopy.getAllPermutations();
+        //System.out.println(permutaciones.size());
+        //System.out.println(permutaciones);
         // assertTrue(adjacencyMatrix.isPermutation());
     }
 
@@ -75,11 +77,13 @@ class AddPrintConditionsTransformerTest {
         verificarNumVerticesAristas(org.example.Main.class, "pruebaFor", 3, 3);
     }
 
+    //@Disabled
     @Test
     void testCurso1617Convocatoria1() {
         verificarNumVerticesAristas(org.example.ejerciciosExamen.curso1617.Convocatoria1.class, "buscar", 6, 7);
     }
 
+    //@Disabled
     @Test
     void testCurso1415Convocatoria2() {
         verificarNumVerticesAristas(org.example.ejerciciosExamen.curso1415.Convocatoria2.class, "imagen", 7, 9);

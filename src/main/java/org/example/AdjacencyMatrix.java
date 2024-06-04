@@ -24,6 +24,11 @@ public class AdjacencyMatrix implements Cloneable {
             if (!(o instanceof AdjacencyRow that)) return false;
             return Objects.equals(adjacencies, that.adjacencies);
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(adjacencies);
+        }
     }
 
     private Map<Integer, AdjacencyRow> adjacenciesRow = new HashMap<>();
@@ -54,7 +59,12 @@ public class AdjacencyMatrix implements Cloneable {
         return true;
     }
 
-    public Set<AdjacencyMatrix> getAllPermutations(){
+    public boolean isAPermutationOf(AdjacencyMatrix other){
+        Set<AdjacencyMatrix> adjacencyMatrixSet = getAllPermutations();
+        return adjacencyMatrixSet.contains(other);
+    }
+
+    private Set<AdjacencyMatrix> getAllPermutations(){
         Set<Integer> rowsIndex = adjacenciesRow.keySet();
         Set<AdjacencyMatrix> adjacencyMatrixSet = getAllPermutations(rowsIndex);
         adjacencyMatrixSet.add(this);
@@ -83,7 +93,6 @@ public class AdjacencyMatrix implements Cloneable {
                     matrices.add(newAdjacencyMatrix);
                 }
                 // Genero recursivamente nuevas permutaciones para cada indice
-                // TODO: DESCOMENTAR CUANDO SWAP FUNCIONE
                 Set<AdjacencyMatrix> newSet = newAdjacencyMatrix.getAllPermutations(newIndexToPermutate);
                 matrices.addAll(newSet);
             }
@@ -92,22 +101,28 @@ public class AdjacencyMatrix implements Cloneable {
     }
 
     private void swap(Integer from, Integer to){
-        // Guardo y elimino la información actual
-        AdjacencyRow adjacencyRowFrom = adjacenciesRow.get(from);
-        adjacenciesRow.remove(from);
-        AdjacencyRow adjacencyRowTo = adjacenciesRow.get(to);
-        adjacenciesRow.remove(from);
-        // La añado swapeandola
-        adjacenciesRow.put(from, adjacencyRowTo);
-        adjacenciesRow.put(to, adjacencyRowFrom);
-        for (Map.Entry<Integer, AdjacencyRow> entry : adjacenciesRow.entrySet()) {
-            // Si contienen referenencia al indice from
-            if (entry.getValue().adjacencies.containsKey(from)){
-
-            }
-            // Si contienen referenencia al indice to
-            if (entry.getValue().adjacencies.containsKey(to)){
-
+        AdjacencyMatrix oldMatrix = this.clone();
+        adjacenciesRow.clear();
+        for (Map.Entry<Integer, AdjacencyRow> entry : oldMatrix.adjacenciesRow.entrySet()) {
+            addRowByIndex(entry.getKey());
+            for (Map.Entry<Integer, Set<EdgeType>> entry2 : entry.getValue().adjacencies.entrySet()) {
+                Integer actualFrom = entry.getKey();
+                Integer actualTo = entry2.getKey();
+                if (actualFrom == from){
+                    actualFrom = to;
+                }
+                else if (actualFrom == to){
+                    actualFrom = from;
+                }
+                if (actualTo == to){
+                    actualTo = from;
+                }
+                else if (actualTo == from){
+                    actualTo = to;
+                }
+                for (EdgeType edge: entry2.getValue()){
+                    addAdjacencyToIndex(actualFrom, actualTo, edge);
+                }
             }
         }
     }
@@ -117,6 +132,11 @@ public class AdjacencyMatrix implements Cloneable {
         if (this == o) return true;
         if (!(o instanceof AdjacencyMatrix that)) return false;
         return Objects.equals(adjacenciesRow, that.adjacenciesRow);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(adjacenciesRow);
     }
 
     @Override
