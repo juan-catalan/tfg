@@ -224,6 +224,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         int opCode = in.getOpcode();
         return ((opCode >= IFEQ && opCode <= IF_ACMPNE) ||
                 (opCode >= IRETURN && opCode <= RETURN) ||
+                (opCode >= IFNULL && opCode <= IFNONNULL) ||
                 (opCode == ATHROW));
     }
 
@@ -320,7 +321,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         while (j.hasNext()) {
             in = j.next();
             int op = in.getOpcode();
-            if (op >= IFEQ && op <= IF_ACMPNE) {
+            if (op >= IFEQ && op <= IF_ACMPNE || op >= IFNULL && op <= IFNONNULL) {
                 if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) indiceNodo++;
                 controlGraph.addVertex(in);
                 // Busco el label de salto (donde va el programa si se evalua true)
