@@ -254,6 +254,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 while (nextNode.getOpcode() < 0) nextNode = nextNode.getNext();
                 // Busco que sea nodo predicado
                 while (!isPredicateNode(nextNode)){
+                    if (nextNode.getOpcode() == GOTO){
+                        return findGotoDestiny((JumpInsnNode) nextNode);
+                    }
                     nextNode = nextNode.getNext();
                 }
                 return nextNode;
