@@ -1,6 +1,9 @@
 package org.example.ejerciciosExamen.curso1920;
 
+import org.example.Coverage2Edge;
+
 public class Convocatoria1 {
+    @Coverage2Edge
     /**
      * Devuelve el valor del mínimo elemento de «v».
      *

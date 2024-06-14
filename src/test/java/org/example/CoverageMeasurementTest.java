@@ -72,4 +72,27 @@ class CoverageMeasurementTest {
         assertEquals(AddPrintConditionsTransformer.numeroCaminosTotal(idMetodo),
                 AddPrintConditionsTransformer.numeroCaminosCubiertos(idMetodo));
     }
+
+    @Test
+    void testCoberturaTodosCaminosCurso1920Convocatoria1() throws NoSuchMethodException {
+        // Obtener clase
+        org.example.ejerciciosExamen.curso1920.Convocatoria1 convocatoria1 = new org.example.ejerciciosExamen.curso1920.Convocatoria1();
+        // Obtener identificador
+        String descriptorMetodo = Type.getMethodDescriptor(convocatoria1.getClass().getMethod("minimo", int[].class));
+        String idMetodo = getClassName(convocatoria1.getClass()).concat("." + "minimo").concat("." + descriptorMetodo);
+        // Ejecutar metodo
+        assertThrows(NullPointerException.class, ()->{
+            convocatoria1.minimo(null);
+        });
+        assertThrows(IllegalArgumentException.class, ()->{
+            convocatoria1.minimo(new int[]{});
+        });
+        convocatoria1.minimo(new int[]{3, 2, 4, 1});
+        convocatoria1.minimo(new int[]{1});
+        convocatoria1.minimo(new int[]{1, 2});
+
+        // Comprobar si todos los caminos han sido cubiertos
+        assertEquals(AddPrintConditionsTransformer.numeroCaminosTotal(idMetodo),
+                AddPrintConditionsTransformer.numeroCaminosCubiertos(idMetodo));
+    }
 }
