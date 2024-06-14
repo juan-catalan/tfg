@@ -1,9 +1,12 @@
 package org.example.ejerciciosExamen.curso2122;
 
+import org.example.Coverage2Edge;
+
 public class Convocatoria1 {
     public static final String FOO_STRING = "Foo";
     public static final String BAR_STRING = "Bar";
 
+    @Coverage2Edge
     /**
      * Devuelve una cadena de caracteres en la que cada aparición del dígito 3 del
      * parámetro n se ha sustituido por la cadena FOO_STRING, cada aparición del

@@ -83,6 +83,14 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         });
     }
 
+    static int numeroCaminosTotal(String descriptorMetodo){
+        return almacenCaminos.get(descriptorMetodo).size();
+    }
+
+    static int numeroCaminosCubiertos(String descriptorMetodo){
+        return caminosRecorridos.get(descriptorMetodo).size();
+    }
+
     static public void imprimirInforme(){
         System.out.println("---------------- Ejecucion terminada ----------------");
         for (String metodo: almacenCaminos.keySet()){
