@@ -303,7 +303,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return null;
     }
 
-    public DirectedPseudograph<AbstractInsnNode, BooleanEdge> getControlFlowGraph(InsnList insns, String idMetodo){
+    DirectedPseudograph<AbstractInsnNode, BooleanEdge> getControlFlowGraph(InsnList insns, String idMetodo){
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Iterator<AbstractInsnNode> j = insns.iterator();
         Integer indiceNodo = 1;
@@ -375,8 +375,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
         return caminos;
     }
-
-    // TODO: Para poder saber con seguridad que estoy en un nodo perteneciente al grafo, pensar si sería buena idea hacer la tarea de generar el grafo y de añadir el bytecode a la vez. Para así poder generar identificadores artificiales a los nodos y a las aristas (para no tener que usar hashcode)
 
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {

@@ -78,10 +78,12 @@ class AddPrintConditionsTransformerTest {
         transformer.addNodoToIntger(idMetodo);
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowGraph(listaInstrucciones, idMetodo);
         DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = transformer.transformGraphToInteger(idMetodo, controlFlowGraph);
+
         System.out.println("Grafo esperado");
         System.out.println(grafoEsperado);
         System.out.println("Grafo obtenido");
         System.out.println(controlFlowGraphInt);
+
 
         assertEquals(grafoEsperado.vertexSet().size(), controlFlowGraphInt.vertexSet().size(), "El grafo obtenido no tiene el número de vertices esperado");
         assertEquals(grafoEsperado.edgeSet().size(), controlFlowGraphInt.edgeSet().size(), "El grafo obtenido no tiene el número de aristas esperado");
