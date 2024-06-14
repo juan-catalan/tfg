@@ -33,7 +33,7 @@ class GetControlFlowGraphTest {
 
 
         InsnList listaInstrucciones = metodo.get().instructions;
-        AddPrintConditionsTransformer transformer = new AddPrintConditionsTransformer(false);
+        AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
         transformer.addNodoToIntger(idMetodo);
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowGraph(listaInstrucciones, idMetodo);
         DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = transformer.transformGraphToInteger(idMetodo, controlFlowGraph);
@@ -73,7 +73,7 @@ class GetControlFlowGraphTest {
         assertFalse(metodo.isEmpty(), "El método no existe en esa clase");
 
         InsnList listaInstrucciones = metodo.get().instructions;
-        AddPrintConditionsTransformer transformer = new AddPrintConditionsTransformer(false);
+        AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
         transformer.addNodoToIntger(idMetodo);
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowGraph(listaInstrucciones, idMetodo);
         DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = transformer.transformGraphToInteger(idMetodo, controlFlowGraph);

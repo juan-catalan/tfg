@@ -7,6 +7,6 @@ import java.security.ProtectionDomain;
 
 public class AddPrintConditionsAgent {
     public static void premain(String agentArgs, Instrumentation inst) {
-        inst.addTransformer(new AddPrintConditionsTransformer());
+        inst.addTransformer(AddPrintConditionsTransformer.getInstance());
     }
 }

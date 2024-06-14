@@ -22,6 +22,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
     static private Map<String, Set<Camino2Edge>> caminosRecorridos;
     static private Map<String, Camino2Edge> caminoActual;
+    static private AddPrintConditionsTransformer instance;
 
     public void addNodoToIntger(String nombre){
         nodoToInteger.put(nombre, new HashMap<>());
@@ -40,11 +41,18 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
     }
 
-    AddPrintConditionsTransformer (){
-        new AddPrintConditionsTransformer(true);
+    private AddPrintConditionsTransformer (){
+        new AddPrintConditionsTransformer(false);
     }
 
-    AddPrintConditionsTransformer (boolean debug){
+    public static AddPrintConditionsTransformer getInstance(){
+        if (instance == null){
+            instance = new AddPrintConditionsTransformer();
+        }
+        return instance;
+    }
+
+    private AddPrintConditionsTransformer (boolean debug){
         DEBUG = debug;
         if (DEBUG) System.out.println("Prueba constructor");
         if (almacenCaminos == null) almacenCaminos = new HashMap<>();
