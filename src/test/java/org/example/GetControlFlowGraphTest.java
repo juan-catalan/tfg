@@ -137,7 +137,7 @@ class GetControlFlowGraphTest {
     @Test
     void testCurso1415Convocatoria2() {
         DirectedPseudograph<Integer, BooleanEdge> grafo = new DirectedPseudograph<>(BooleanEdge.class);
-        /* ASI DEBERIA SER
+        /* ASI DEBERIA SER */
         // Añado los vertices
         grafo.addVertex(1);
         grafo.addVertex(2);
@@ -153,8 +153,8 @@ class GetControlFlowGraphTest {
         grafo.addEdge(3,4, new BooleanEdge(EdgeType.TRUE));
         grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
         grafo.addEdge(4,6, new BooleanEdge(EdgeType.FALSE));
-         */
         // ASI ES SI TENEMOS EN CUENTA EL NODE PREDICADO EXTRA DE LA ASIGNACION BOOLEANA
+        /*
         // Añado los vertices
         grafo.addVertex(1);
         grafo.addVertex(2);
@@ -173,6 +173,7 @@ class GetControlFlowGraphTest {
         grafo.addEdge(3,4, new BooleanEdge(EdgeType.TRUE));
         grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
         grafo.addEdge(4,6, new BooleanEdge(EdgeType.FALSE));
+         */
         verificarGrafo(org.example.ejerciciosExamen.curso1415.Convocatoria2.class, "imagen", grafo);
     }
 

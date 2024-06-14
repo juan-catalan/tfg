@@ -244,6 +244,28 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 (opCode == ATHROW));
     }
 
+    public boolean isBooleanAssignment(AbstractInsnNode in){
+        AbstractInsnNode auxNode = in.getNext();
+        System.out.println("Buscando booleanassignment");
+        System.out.println(auxNode.getOpcode());
+        while (auxNode.getOpcode() <= 0) auxNode = auxNode.getNext();
+        if (auxNode.getOpcode() != ICONST_1) return false;
+        System.out.println("ICONST1");
+        auxNode = auxNode.getNext();
+        while (auxNode.getOpcode() <= 0) auxNode = auxNode.getNext();
+        if (auxNode.getOpcode() != GOTO) return false;
+        System.out.println("GOTO");
+        auxNode = auxNode.getNext();
+        while (auxNode.getOpcode() <= 0) auxNode = auxNode.getNext();
+        if (auxNode.getOpcode() != ICONST_0) return false;
+        System.out.println("ICONST0");
+        auxNode = auxNode.getNext();
+        while (auxNode.getOpcode() <= 0) auxNode = auxNode.getNext();
+        if (auxNode.getOpcode() != ISTORE) return false;
+        System.out.println("STORE");
+        return true;
+    }
+
     public DirectedPseudograph<Integer, BooleanEdge> transformGraphToInteger(String metodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
         DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Map<AbstractInsnNode, Integer> nodeIntegerMap = nodoToInteger.get(metodo);
@@ -329,6 +351,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) indiceNodo++;
         controlGraph.addVertex(in);
         AbstractInsnNode nextPredicate = findNextPredicateNode(in);
+        if (isBooleanAssignment(nextPredicate)){
+            nextPredicate = findNextPredicateNode(nextPredicate);
+        }
         if (nextPredicate != null){
             if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) indiceNodo++;
             controlGraph.addVertex(nextPredicate);
@@ -338,6 +363,10 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             in = j.next();
             int op = in.getOpcode();
             if (op >= IFEQ && op <= IF_ACMPNE || op >= IFNULL && op <= IFNONNULL) {
+                if (isBooleanAssignment(in)){
+                    System.out.println("Asignación booleana");
+                    continue;
+                }
                 if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) indiceNodo++;
                 controlGraph.addVertex(in);
                 // Busco el label de salto (donde va el programa si se evalua true)
