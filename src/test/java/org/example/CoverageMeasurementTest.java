@@ -2,6 +2,7 @@ package org.example;
 
 import org.jgrapht.graph.DirectedPseudograph;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
@@ -93,6 +94,85 @@ class CoverageMeasurementTest {
 
         // Comprobar si todos los caminos han sido cubiertos
         assertEquals(AddPrintConditionsTransformer.numeroCaminosTotal(idMetodo),
+                AddPrintConditionsTransformer.numeroCaminosCubiertos(idMetodo));
+    }
+
+    @Test
+    void testCoberturaTodosCaminosCurso1819Convocatoria1() throws NoSuchMethodException {
+        // Obtener clase
+        org.example.ejerciciosExamen.curso1819.Convocatoria1 convocatoria1 = new org.example.ejerciciosExamen.curso1819.Convocatoria1();
+        // Obtener identificador
+        String descriptorMetodo = Type.getMethodDescriptor(convocatoria1.getClass().getMethod("buscar", int[].class, int.class));
+        String idMetodo = getClassName(convocatoria1.getClass()).concat("." + "buscar").concat("." + descriptorMetodo);
+        // Ejecutar metodo
+        convocatoria1.buscar(new int[]{}, 8);
+        convocatoria1.buscar(new int[]{1, 2, 3, 4, 5, 6, 7, 8}, 6);
+        convocatoria1.buscar(new int[]{1}, 2);
+        convocatoria1.buscar(new int[]{1, 2}, 1);
+
+        // Comprobar si todos los caminos han sido cubiertos
+        assertEquals(AddPrintConditionsTransformer.numeroCaminosTotal(idMetodo),
+                AddPrintConditionsTransformer.numeroCaminosCubiertos(idMetodo));
+    }
+
+    @Test
+    void testCoberturaTodosCaminosCurso1617Convocatoria1() throws NoSuchMethodException {
+        // Obtener clase
+        org.example.ejerciciosExamen.curso1617.Convocatoria1 convocatoria1 = new org.example.ejerciciosExamen.curso1617.Convocatoria1();
+        // Obtener identificador
+        String descriptorMetodo = Type.getMethodDescriptor(convocatoria1.getClass().getMethod("buscar", int[].class, int.class));
+        String idMetodo = getClassName(convocatoria1.getClass()).concat("." + "buscar").concat("." + descriptorMetodo);
+        // Ejecutar metodo
+        convocatoria1.buscar(new int[]{11, 12, 13}, 12);
+        convocatoria1.buscar(new int[]{22}, 22);
+        convocatoria1.buscar(new int[]{21, 22}, 20);
+
+        // Comprobar si todos los caminos han sido cubiertos (excepto el camino imposible)
+        assertEquals(AddPrintConditionsTransformer.numeroCaminosTotal(idMetodo) - 1,
+                AddPrintConditionsTransformer.numeroCaminosCubiertos(idMetodo));
+    }
+
+    // Nodos de más debido a asignacion booleana
+    @Disabled
+    @Test
+    void testCoberturaTodosCaminosCurso1516Convocatoria1() throws NoSuchMethodException {
+        // Obtener clase
+        org.example.ejerciciosExamen.curso1516.Convocatoria1 convocatoria1 = new org.example.ejerciciosExamen.curso1516.Convocatoria1();
+        // Obtener identificador
+        String descriptorMetodo = Type.getMethodDescriptor(convocatoria1.getClass().getMethod("esPrimo", int.class));
+        String idMetodo = getClassName(convocatoria1.getClass()).concat("." + "esPrimo").concat("." + descriptorMetodo);
+        // Ejecutar metodo
+        convocatoria1.esPrimo(2);
+        convocatoria1.esPrimo(1);
+        convocatoria1.esPrimo(4);
+        convocatoria1.esPrimo(11);
+        convocatoria1.esPrimo(13);
+        convocatoria1.esPrimo(17);
+        convocatoria1.esPrimo(19);
+        convocatoria1.esPrimo(23);
+        convocatoria1.esPrimo(9);
+
+        // Comprobar si todos los caminos han sido cubiertos (excepto el camino imposible)
+        assertEquals(AddPrintConditionsTransformer.numeroCaminosTotal(idMetodo) - 1,
+                AddPrintConditionsTransformer.numeroCaminosCubiertos(idMetodo));
+    }
+
+    // Nodos de más debido a asignacion booleana
+    @Disabled
+    @Test
+    void testCoberturaTodosCaminosCurso1415Convocatoria1() throws NoSuchMethodException {
+        // Obtener clase
+        org.example.ejerciciosExamen.curso1415.Convocatoria2 convocatoria2 = new org.example.ejerciciosExamen.curso1415.Convocatoria2();
+        // Obtener identificador
+        String descriptorMetodo = Type.getMethodDescriptor(convocatoria2.getClass().getMethod("imagen", int.class));
+        String idMetodo = getClassName(convocatoria2.getClass()).concat("." + "imagen").concat("." + descriptorMetodo);
+        // Ejecutar metodo
+        convocatoria2.imagen(-78);
+        convocatoria2.imagen(7);
+        convocatoria2.imagen(0);
+
+        // Comprobar si todos los caminos han sido cubiertos (excepto el camino imposible)
+        assertEquals(AddPrintConditionsTransformer.numeroCaminosTotal(idMetodo) - 1,
                 AddPrintConditionsTransformer.numeroCaminosCubiertos(idMetodo));
     }
 }

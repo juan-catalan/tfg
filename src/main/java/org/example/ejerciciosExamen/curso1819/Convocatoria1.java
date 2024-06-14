@@ -1,5 +1,7 @@
 package org.example.ejerciciosExamen.curso1819;
 
+import org.example.Coverage2Edge;
+
 public class Convocatoria1 {
     /**
      * Pre:  Los valores de las componentes del parámetro «vector» están ordenados
@@ -8,6 +10,7 @@ public class Convocatoria1 {
      *       «datoBuscado», ha devuelto su índice.
      *       En caso contrario, ha devuelto -1.
      */
+    @Coverage2Edge
     public static int buscar(int[] vector, int datoBuscado) {
         if (vector.length == 0) {
             return -1;
