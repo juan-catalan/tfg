@@ -246,23 +246,18 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     public boolean isBooleanAssignment(AbstractInsnNode in){
         AbstractInsnNode auxNode = in.getNext();
-        System.out.println("Buscando booleanassignment");
         System.out.println(auxNode.getOpcode());
         while (auxNode.getOpcode() <= 0) auxNode = auxNode.getNext();
         if (auxNode.getOpcode() != ICONST_1) return false;
-        System.out.println("ICONST1");
         auxNode = auxNode.getNext();
         while (auxNode.getOpcode() <= 0) auxNode = auxNode.getNext();
         if (auxNode.getOpcode() != GOTO) return false;
-        System.out.println("GOTO");
         auxNode = auxNode.getNext();
         while (auxNode.getOpcode() <= 0) auxNode = auxNode.getNext();
         if (auxNode.getOpcode() != ICONST_0) return false;
-        System.out.println("ICONST0");
         auxNode = auxNode.getNext();
         while (auxNode.getOpcode() <= 0) auxNode = auxNode.getNext();
         if (auxNode.getOpcode() != ISTORE) return false;
-        System.out.println("STORE");
         return true;
     }
 
