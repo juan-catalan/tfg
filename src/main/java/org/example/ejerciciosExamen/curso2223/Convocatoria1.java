@@ -1,5 +1,7 @@
 package org.example.ejerciciosExamen.curso2223;
 
+import org.example.Coverage2Edge;
+
 public class Convocatoria1 {
     private int[] bolos;
 
@@ -11,6 +13,7 @@ public class Convocatoria1 {
         }
     }
 
+    @Coverage2Edge
     public int calcularPuntuacion() {
         int puntuacion = 0;
         int lanzamiento = 0;

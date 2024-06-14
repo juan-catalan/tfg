@@ -1,6 +1,5 @@
 package org.example;
 
-import org.example.ejerciciosExamen.curso2122.Convocatoria1;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,10 +25,10 @@ class CoverageMeasurementTest {
     @Test
     void testCoberturaTodosCaminosCurso2122Convocatoria1() throws NoSuchMethodException {
         // Obtener clase
-        Convocatoria1 convocatoria1 = new Convocatoria1();
+        org.example.ejerciciosExamen.curso2122.Convocatoria1 convocatoria1 = new org.example.ejerciciosExamen.curso2122.Convocatoria1();
         // Obtener identificador
         String descriptorMetodo = Type.getMethodDescriptor(convocatoria1.getClass().getMethod("replaceDigits", int.class));
-        String idMetodo = getClassName(Convocatoria1.class).concat("." + "replaceDigits").concat("." + descriptorMetodo);
+        String idMetodo = getClassName(convocatoria1.getClass()).concat("." + "replaceDigits").concat("." + descriptorMetodo);
         // Ejecutar metodo
         convocatoria1.replaceDigits(353);
         convocatoria1.replaceDigits(15);
@@ -42,6 +41,35 @@ class CoverageMeasurementTest {
          */
         // Comprobar si todos los caminos han sido cubiertos (excepto el camino imposible)
         assertEquals(AddPrintConditionsTransformer.numeroCaminosTotal(idMetodo) - 1,
+                AddPrintConditionsTransformer.numeroCaminosCubiertos(idMetodo));
+    }
+
+    @Test
+    void testCoberturaTodosCaminosCurso2223Convocatoria1() throws NoSuchMethodException {
+        // Obtener clase
+        org.example.ejerciciosExamen.curso2223.Convocatoria1 convocatoria1 = new org.example.ejerciciosExamen.curso2223.Convocatoria1();
+        // Obtener identificador
+        String descriptorMetodo = Type.getMethodDescriptor(convocatoria1.getClass().getMethod("calcularPuntuacion"));
+        String idMetodo = getClassName(convocatoria1.getClass()).concat("." + "calcularPuntuacion").concat("." + descriptorMetodo);
+        // Ejecutar metodo
+        convocatoria1.setBolos(new int[]{10, 10});
+        convocatoria1.calcularPuntuacion();
+        convocatoria1.setBolos(new int[]{4, 6, 10, 4, 4, 10, 4, 6});
+        convocatoria1.calcularPuntuacion();
+        convocatoria1.setBolos(new int[]{});
+        convocatoria1.calcularPuntuacion();
+        convocatoria1.setBolos(new int[]{4, 3});
+        convocatoria1.calcularPuntuacion();
+        convocatoria1.setBolos(new int[]{4, 6, 4, 4, 4, 6});
+        convocatoria1.calcularPuntuacion();
+        /*
+        convocatoria1.setBolos(new int[]{1, 1});
+        convocatoria1.calcularPuntuacion();
+
+         */
+
+        // Comprobar si todos los caminos han sido cubiertos
+        assertEquals(AddPrintConditionsTransformer.numeroCaminosTotal(idMetodo),
                 AddPrintConditionsTransformer.numeroCaminosCubiertos(idMetodo));
     }
 }
