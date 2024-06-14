@@ -1,7 +1,6 @@
 package org.example;
 
 import org.jgrapht.graph.DirectedPseudograph;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -16,7 +15,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.objectweb.asm.Opcodes.ASM4;
 
-class AddPrintConditionsTransformerTest {
+class GetControlFlowGraphTest {
     void verificarNumVerticesAristas(Class clase, String nombreMetodo, int numVertices, int numAristas){
         String idMetodo = clase.getName().concat(".").concat(nombreMetodo);
 
