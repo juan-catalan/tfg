@@ -1,6 +1,5 @@
 package org.example;
 
-import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
@@ -11,7 +10,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import org.objectweb.asm.util.TraceClassVisitor;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -245,8 +243,30 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     }
 
     public boolean isBooleanAssignment(AbstractInsnNode in){
-        AbstractInsnNode auxNode = in.getNext();
-        System.out.println(auxNode.getOpcode());
+        if (!(in instanceof JumpInsnNode)) return false;
+        System.out.println("Checkeando boolean assignment");
+        AbstractInsnNode auxNode = findGotoDestiny((JumpInsnNode) in);
+        // Paso del bytecode auxiliar
+        while (auxNode.getOpcode() < 0){
+            auxNode = auxNode.getNext();
+        }
+        if (auxNode.getOpcode() != ICONST_0 && auxNode.getOpcode() != ICONST_1)
+            return false;
+        System.out.println("ICONST");
+        auxNode = auxNode.getNext();
+        // Paso del bytecode auxiliar
+        while (auxNode.getOpcode() < 0){
+            auxNode = auxNode.getNext();
+        }
+        if (auxNode.getOpcode() == GOTO) auxNode = findGotoDestiny((JumpInsnNode) auxNode);
+        if (auxNode.getOpcode() == ISTORE) return true;
+        else return false;
+        /*
+        AbstractInsnNode nextPredicateNode = findNextPredicateNode(in);
+        while (auxNode != nextPredicateNode){
+
+        }
+
         while (auxNode.getOpcode() <= 0) auxNode = auxNode.getNext();
         if (auxNode.getOpcode() != ICONST_1) return false;
         auxNode = auxNode.getNext();
@@ -259,6 +279,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         while (auxNode.getOpcode() <= 0) auxNode = auxNode.getNext();
         if (auxNode.getOpcode() != ISTORE) return false;
         return true;
+         */
     }
 
     public DirectedPseudograph<Integer, BooleanEdge> transformGraphToInteger(String metodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
@@ -275,8 +296,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return newGraph;
     }
 
-    public AbstractInsnNode findGotoDestiny(JumpInsnNode in){
-        if (in.getOpcode() != GOTO) return null;
+    public AbstractInsnNode findJumpDestiny(JumpInsnNode in){
         LabelNode target = in.label;
 
         AbstractInsnNode nextNode = in.getNext();
@@ -286,13 +306,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             ){
                 // Avanzo si es bytecode auxiliar
                 while (nextNode.getOpcode() < 0) nextNode = nextNode.getNext();
-                // Busco que sea nodo predicado
-                while (!isPredicateNode(nextNode)){
-                    if (nextNode.getOpcode() == GOTO){
-                        return findGotoDestiny((JumpInsnNode) nextNode);
-                    }
-                    nextNode = nextNode.getNext();
-                }
                 return nextNode;
             }
             nextNode = nextNode.getNext();
@@ -301,18 +314,28 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         AbstractInsnNode previousNode = in.getPrevious();
         while (previousNode != null){
             if ((previousNode instanceof LabelNode) &&
-                target.equals(previousNode)
+                    target.equals(previousNode)
             ){
-                while (previousNode.getOpcode() < 0) previousNode = previousNode.getNext();
-                while (!isPredicateNode(previousNode)){
-                    previousNode = previousNode.getNext();
-                }
                 return previousNode;
             }
             previousNode = previousNode.getPrevious();
         }
 
         return null;
+    }
+
+    public AbstractInsnNode findGotoDestiny(JumpInsnNode in){
+        AbstractInsnNode destiny = findJumpDestiny(in);
+        if (destiny != null) {
+            // Busco que sea nodo predicado
+            while (!isPredicateNode(destiny)){
+                if (destiny.getOpcode() == GOTO){
+                    return findGotoDestiny((JumpInsnNode) destiny);
+                }
+                destiny = destiny.getNext();
+            }
+        }
+        return destiny;
     }
 
     public AbstractInsnNode findNextPredicateNode(AbstractInsnNode in){
