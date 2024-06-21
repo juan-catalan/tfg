@@ -1,5 +1,6 @@
 package org.example;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -54,54 +55,21 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         public void run() {
             long startTime = System.nanoTime();
             AddPrintConditionsTransformer.imprimirInforme();
-            /*
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.submit(() -> {
-                System.out.println("Ejecuto iniciado");
-                try {
-                    // Código para generar el informe usando Thymeleaf
-                    Context context = new Context();
-                    List<String> prueba = new ArrayList<>();
-                    prueba.add("Metodo 1");
-                    context.setVariable("methods", prueba);
-                    StringWriter stringWriter = new StringWriter();
-                    templateEngine.process("report", context, stringWriter);
-                    System.out.println("Procesado");
-                    System.out.println("REPORT:");
-                    System.out.println(stringWriter.toString());
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                try {
-                    AddPrintConditionsTransformer.imprimirInforme();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-            executor.shutdown();
-            try {
-                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                    executor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                executor.shutdownNow();
-            }
-            */
             long endTime = System.nanoTime();
             long duration = (endTime - startTime) / 1000000;  // Divide by 1000000 to get milliseconds.
             System.out.println(duration + " ms to execute the shutdown hook");
         }
     }
 
-    private AddPrintConditionsTransformer (){
+    private void initializeThymeleaf(){
         templateResolver.setPrefix("/templates/");
         templateResolver.setSuffix(".html");
         templateResolver.setTemplateMode("HTML");
         templateEngine.setTemplateResolver(templateResolver);
         templateEngine.process("report", new Context(), Writer.nullWriter());
+    }
+
+    private AddPrintConditionsTransformer (){
         new AddPrintConditionsTransformer(false);
     }
 
@@ -121,6 +89,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         if (caminosRecorridos == null) caminosRecorridos = new HashMap<>();
         if (caminoActual == null) caminoActual = new HashMap<>();
         if (grafosMetodos == null) grafosMetodos = new HashMap<>();
+        initializeThymeleaf();
         ShutDownHook jvmShutdownHook = new ShutDownHook();
         Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
     }
@@ -154,15 +123,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     static public void imprimirInforme(){
         System.out.println("---------------- Ejecucion terminada ----------------");
-        Context context = new Context();
-        List<String> pruebaHTML = new ArrayList<>();
-        pruebaHTML.add("Metodo 1");
-        context.setVariable("methods", pruebaHTML);
-        StringWriter stringWriter = new StringWriter();
-        templateEngine.process("report", context, stringWriter);
-        System.out.println("Procesado");
-        System.out.println("REPORT:");
-        System.out.println(stringWriter.toString());
+        List<MethodReportDTO> methodReportDTOList = new ArrayList<>();
         for (String metodo: almacenCaminos.keySet()){
             Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
             Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
@@ -230,7 +191,21 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 if (!recorridosCaminos.contains(camino)) System.out.println("\t\t\t" + camino);
             }));
             System.out.println("\t\t]");
+            MethodReportDTO methodReportDTO = new MethodReportDTO(metodo, writer.toString(), todosCaminos.toString(), recorridosCaminos.toString());
+            methodReportDTOList.add(methodReportDTO);
         }
+        Context context = new Context();
+        context.setVariable("methods", methodReportDTOList);
+        StringWriter stringWriter = new StringWriter();
+        try {
+            Writer fileWriter = new FileWriter("coverageReport/report.html");
+            templateEngine.process("report", context, fileWriter);
+        } catch (IOException e) {
+            templateEngine.process("report", context, stringWriter);
+        }
+        System.out.println("Procesado");
+        System.out.println("REPORT:");
+        System.out.println(stringWriter.toString());
     }
 
 

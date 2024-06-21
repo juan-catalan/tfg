@@ -7,7 +7,13 @@
 <body>
     <div>
         <div th:each="method : ${methods}">
-            <h1 th:text="${method}">Metodo</h1>
+            <h1 th:text="${method.nombre}">Clase y nombre del metodo</h1>
+            <h2>Grafo</h2>
+            <span th:text="${method.grafo}">El grafo no esta disponible</span>
+            <h2>Todos los caminos</h2>
+            <span th:text="${method.caminos}">Los caminos no estan disponibles</span>
+            <h2>Caminos cubiertos</h2>
+            <span th:text="${method.caminosCubiertos}">Los caminos cubiertos no estan disponibles</span>
         </div>
     </div>
 </body>
