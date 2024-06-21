@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sample Thymeleaf template</title>
+</head>
+<body>
+    <div>
+        <div th:each="method : ${methods}">
+            <h1 th:text="${method}">Metodo</h1>
+        </div>
+    </div>
+</body>
+</html>

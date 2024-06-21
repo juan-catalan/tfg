@@ -10,14 +10,23 @@ repositories {
 }
 
 dependencies {
-    implementation("org.ow2.asm:asm:9.6")
+    implementation("org.ow2.asm:asm:9.7")
     // https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
-    implementation("org.ow2.asm:asm-tree:9.6")
-    implementation("org.ow2.asm:asm-util:9.6")
-    implementation("org.ow2.asm:asm-analysis:9.6")
+    implementation("org.ow2.asm:asm-tree:9.7")
+    implementation("org.ow2.asm:asm-util:9.7")
+    implementation("org.ow2.asm:asm-analysis:9.7")
 
     // https://mvnrepository.com/artifact/org.jgrapht/jgrapht-core
     implementation("org.jgrapht:jgrapht-core:1.5.2")
+
+    // https://mvnrepository.com/artifact/org.jgrapht/jgrapht-io
+    implementation("org.jgrapht:jgrapht-io:1.5.2")
+
+
+    // https://mvnrepository.com/artifact/org.thymeleaf/thymeleaf
+    implementation("org.thymeleaf:thymeleaf:3.1.2.RELEASE")
+    // https://mvnrepository.com/artifact/org.slf4j/slf4j-nop
+    implementation("org.slf4j:slf4j-nop:2.0.13")
 
 
 
