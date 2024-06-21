@@ -20,9 +20,13 @@
             <p th:if="${method.grafoImagen == null}" th:text="${method.grafo}">El grafo no esta disponible</p>
             <img th:src="${method.grafoImagen}">
             <h2>Todos los caminos</h2>
-            <p th:text="${method.caminos}">Los caminos no estan disponibles</p>
+            <ul th:each="camino : ${method.caminos}">
+                <li th:text="${camino}"></li>
+            </ul>
             <h2>Caminos cubiertos</h2>
-            <p th:text="${method.caminosCubiertos}">Los caminos cubiertos no estan disponibles</p>
+            <ul th:each="caminoCubierto : ${method.caminosCubiertos}">
+                <li th:text="${caminoCubierto}"></li>
+            </ul>
             <hr th:if="${itemStat.index != methods.size() - 1}" class="hr" />
         </div>
     </div>

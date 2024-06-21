@@ -197,7 +197,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 if (!recorridosCaminos.contains(camino)) System.out.println("\t\t\t" + camino);
             }));
             System.out.println("\t\t]");
-            MethodReportDTO methodReportDTO = new MethodReportDTO(metodo, graphToDot(metodo), grafosRenderedMetodos.get(metodo), todosCaminos.toString(), recorridosCaminos.toString());
+            MethodReportDTO methodReportDTO = new MethodReportDTO(metodo, graphToDot(metodo), grafosRenderedMetodos.get(metodo), todosCaminos.stream().map(c -> c.toString()).toList(), recorridosCaminos.stream().map(c -> c.toString()).toList());
             methodReportDTOList.add(methodReportDTO);
         }
         Context context = new Context();
