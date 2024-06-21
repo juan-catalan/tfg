@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.Deflater;
 
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.nio.Attribute;
@@ -34,6 +35,7 @@ import static org.objectweb.asm.Opcodes.*;
 public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static boolean DEBUG = true;
     static private Map<String, DirectedPseudograph<Integer, BooleanEdge>> grafosMetodos;
+    static private Map<String, String> grafosRenderedMetodos;
     static private Map<String, Set<Camino2Edge>> almacenCaminos;
     static private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
     static private Map<String, Map<Integer, Integer>> nodoToLinenumber;
@@ -89,6 +91,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         if (caminosRecorridos == null) caminosRecorridos = new HashMap<>();
         if (caminoActual == null) caminoActual = new HashMap<>();
         if (grafosMetodos == null) grafosMetodos = new HashMap<>();
+        if (grafosRenderedMetodos == null) grafosRenderedMetodos = new HashMap<>();
         initializeThymeleaf();
         ShutDownHook jvmShutdownHook = new ShutDownHook();
         Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
@@ -121,30 +124,32 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return caminosRecorridos.get(descriptorMetodo).size();
     }
 
+    static String graphToDot(String metodo){
+        DOTExporter<Integer, BooleanEdge> exporter = new DOTExporter<>();
+        Map<Integer, Integer> nodoToLinenumberMap = nodoToLinenumber.get(metodo);
+        //nodoToLinenumberMap.getOrDefault(v, v);
+        exporter.setVertexAttributeProvider((v) -> {
+            Map<String, Attribute> map = new LinkedHashMap<>();
+            map.put("label", DefaultAttribute.createAttribute(nodoToLinenumberMap.getOrDefault(v, v)));
+            return map;
+        });
+        exporter.setEdgeAttributeProvider((e) -> {
+            Map<String, Attribute> map = new LinkedHashMap<>();
+            map.put("label", DefaultAttribute.createAttribute(e.toString()));
+            return map;
+        });
+        Writer writer = new StringWriter();
+        // exporter.exportGraph(transformGraphFromIntegerToLinenumber(metodo, grafosMetodos.get(metodo)), writer);
+        exporter.exportGraph(grafosMetodos.get(metodo), writer);
+        return writer.toString();
+    }
+
     static public void imprimirInforme(){
         System.out.println("---------------- Ejecucion terminada ----------------");
         List<MethodReportDTO> methodReportDTOList = new ArrayList<>();
         for (String metodo: almacenCaminos.keySet()){
             Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
             Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
-            DOTExporter<Integer, BooleanEdge> exporter = new DOTExporter<>();
-            Map<Integer, Integer> nodoToLinenumberMap = nodoToLinenumber.get(metodo);
-            //nodoToLinenumberMap.getOrDefault(v, v);
-            exporter.setVertexAttributeProvider((v) -> {
-                Map<String, Attribute> map = new LinkedHashMap<>();
-                map.put("label", DefaultAttribute.createAttribute(nodoToLinenumberMap.getOrDefault(v, v)));
-                return map;
-            });
-            exporter.setEdgeAttributeProvider((e) -> {
-                Map<String, Attribute> map = new LinkedHashMap<>();
-                map.put("label", DefaultAttribute.createAttribute(e.toString()));
-                return map;
-            });
-            Writer writer = new StringWriter();
-            // exporter.exportGraph(transformGraphFromIntegerToLinenumber(metodo, grafosMetodos.get(metodo)), writer);
-            exporter.exportGraph(grafosMetodos.get(metodo), writer);
-            System.out.println(writer.toString());
-
             /*
             try {
                 HttpRequest request = HttpRequest.newBuilder()
@@ -192,7 +197,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 if (!recorridosCaminos.contains(camino)) System.out.println("\t\t\t" + camino);
             }));
             System.out.println("\t\t]");
-            MethodReportDTO methodReportDTO = new MethodReportDTO(metodo, writer.toString(), todosCaminos.toString(), recorridosCaminos.toString());
+            MethodReportDTO methodReportDTO = new MethodReportDTO(metodo, graphToDot(metodo), grafosRenderedMetodos.get(metodo), todosCaminos.toString(), recorridosCaminos.toString());
             methodReportDTOList.add(methodReportDTO);
         }
         Context context = new Context();
@@ -333,7 +338,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
         if (auxNode.getOpcode() != ICONST_0 && auxNode.getOpcode() != ICONST_1)
             return false;
-        System.out.println("ICONST");
+        //System.out.println("ICONST");
         auxNode = auxNode.getNext();
         // Paso del bytecode auxiliar
         while (auxNode.getOpcode() < 0){
@@ -341,13 +346,13 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
         if (auxNode.getOpcode() == GOTO) {
             auxNode = findJumpDestiny((JumpInsnNode) auxNode);
-            System.out.println("GOTO");
+            //System.out.println("GOTO");
         }
         while (auxNode.getOpcode() < 0){
             auxNode = auxNode.getNext();
         }
         if (auxNode.getOpcode() == ISTORE) {
-            System.out.println("ISTORE");
+            //System.out.println("ISTORE");
             return true;
         }
         else return false;
@@ -355,12 +360,12 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     public boolean isBooleanAssignment(AbstractInsnNode in){
         if (!(in instanceof JumpInsnNode)) return false;
-        boolean caminoSaltoBool = false, caminoNormalBool = false;
-        System.out.println("Checkeando boolean assignment");
+        boolean caminoSaltoBool, caminoNormalBool;
+        //System.out.println("Checkeando boolean assignment");
         AbstractInsnNode auxNode = findJumpDestiny((JumpInsnNode) in);
-        System.out.println("Por salto");
+        //System.out.println("Por salto");
         caminoSaltoBool = isBranchBooleanAssignment(auxNode);
-        System.out.println("Por normal");
+        //System.out.println("Por normal");
         caminoNormalBool = isBranchBooleanAssignment(in.getNext());
         /*
         if (caminoSaltoBool && !caminoNormalBool){
@@ -533,27 +538,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                         controlGraph.addVertex(nextPredicate);
                         controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.TRUE));
                     }
-                    /*
-                    LabelNode label = ((JumpInsnNode) in).label;
-                    while (true) {
-                        if (target instanceof LabelNode){
-                            if (((LabelNode) target).equals(label)){
-                                nextPredicate = findNextPredicateNode(target);
-                                while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate);
-                                if (nextPredicate != null){
-                                    if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
-                                        nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
-                                        indiceNodo++;
-                                    }
-                                    controlGraph.addVertex(nextPredicate);
-                                    controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.TRUE));
-                                }
-                                break;
-                            }
-                        }
-                        target = target.getNext();
-                    }
-                     */
                 }
                 // Busco el siguiente nodo predicado por el camino FALSE
                 nextPredicate = findNextPredicateNode(in.getNext());
@@ -640,6 +624,36 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = this.getControlFlowGraph(insns, idMetodo);
                     if (DEBUG) System.out.println(grafo.toString());
                     grafosMetodos.put(idMetodo, transformGraphToInteger(idMetodo, grafo));
+                    byte[] output = new byte[graphToDot(idMetodo).getBytes().length];
+                    Deflater compresser = new Deflater();
+                    compresser.setInput(graphToDot(idMetodo).getBytes());
+                    compresser.finish();
+                    compresser.deflate(output);
+                    byte[] outputB64 = Base64.getEncoder().encode(output);
+                    System.out.println(outputB64);
+
+                    /*
+                    try {
+                        HttpRequest request = HttpRequest.newBuilder()
+                                .uri(new URI("https://kroki.io/graphviz/png/" + new String(outputB64)))
+                                .GET()
+                                .build();
+                        HttpClient client = HttpClient.newHttpClient();
+                        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                        System.out.println("HTTP RESPONSE");
+                        System.out.println(response.body());
+                        grafosRenderedMetodos.put(idMetodo, response.body());
+                    } catch (URISyntaxException e) {
+                        throw new RuntimeException(e);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                     */
+                    grafosRenderedMetodos.put(idMetodo,"https://kroki.io/graphviz/png/" + new String(outputB64));
+
 
 
                     Set<Camino2Edge> caminos = pruebaObtenerCaminos(idMetodo, grafo);

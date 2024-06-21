@@ -91,6 +91,8 @@ public class Main {
         Convocatoria1.esPrimo(1);
         org.example.ejerciciosExamen.curso1617.Convocatoria1.buscar(new int[]{1,2,3,5}, 1);
 
+        org.example.ejerciciosExamen.curso1516.Convocatoria1.esPrimo(1);
+
 
         antiguoMain(1,2);
     }
