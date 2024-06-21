@@ -35,6 +35,7 @@ class GetControlFlowGraphTest {
         InsnList listaInstrucciones = metodo.get().instructions;
         AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
         transformer.addNodoToIntger(idMetodo);
+        transformer.addNodoLinenumber(idMetodo);
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowGraph(listaInstrucciones, idMetodo);
         DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = transformer.transformGraphToInteger(idMetodo, controlFlowGraph);
         System.out.println(controlFlowGraphInt);
@@ -75,8 +76,9 @@ class GetControlFlowGraphTest {
         InsnList listaInstrucciones = metodo.get().instructions;
         AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
         transformer.addNodoToIntger(idMetodo);
+        transformer.addNodoLinenumber(idMetodo);
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowGraph(listaInstrucciones, idMetodo);
-        DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = transformer.transformGraphToInteger(idMetodo, controlFlowGraph);
+        DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = AddPrintConditionsTransformer.transformGraphToInteger(idMetodo, controlFlowGraph);
 
         System.out.println("Grafo esperado");
         System.out.println(grafoEsperado);
@@ -175,6 +177,54 @@ class GetControlFlowGraphTest {
         grafo.addEdge(4,6, new BooleanEdge(EdgeType.FALSE));
          */
         verificarGrafo(org.example.ejerciciosExamen.curso1415.Convocatoria2.class, "imagen", grafo);
+    }
+
+    @Test
+    void testCurso1516Convocatoria1() {
+        DirectedPseudograph<Integer, BooleanEdge> grafo = new DirectedPseudograph<>(BooleanEdge.class);
+        /* ASI DEBERIA SER */
+        // Añado los vertices
+        grafo.addVertex(1);
+        grafo.addVertex(2);
+        grafo.addVertex(3);
+        grafo.addVertex(4);
+        grafo.addVertex(5);
+        grafo.addVertex(6);
+        grafo.addVertex(7);
+        // Añado las aristas
+        grafo.addEdge(1,2, new BooleanEdge(EdgeType.DEFAULT));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(2,7, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(3,4, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(3,7, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(4,7, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(5,6, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(6,7, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(6,5, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(6,7, new BooleanEdge(EdgeType.TRUE));
+        // ASI ES SI TENEMOS EN CUENTA EL NODE PREDICADO EXTRA DE LA ASIGNACION BOOLEANA
+        /*
+        // Añado los vertices
+        grafo.addVertex(1);
+        grafo.addVertex(2);
+        grafo.addVertex(3);
+        grafo.addVertex(4);
+        grafo.addVertex(5);
+        grafo.addVertex(6);
+        grafo.addVertex(7);
+        // Añado las aristas
+        grafo.addEdge(1,7, new BooleanEdge(EdgeType.DEFAULT));
+        grafo.addEdge(7,2, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(7,2, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(3,3, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(3,4, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(4,6, new BooleanEdge(EdgeType.FALSE));
+         */
+        verificarGrafo(org.example.ejerciciosExamen.curso1516.Convocatoria1.class, "esPrimo", grafo);
     }
 
     @Test

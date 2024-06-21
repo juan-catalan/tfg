@@ -133,7 +133,6 @@ class CoverageMeasurementTest {
     }
 
     // Nodos de más debido a asignacion booleana
-    @Disabled
     @Test
     void testCoberturaTodosCaminosCurso1516Convocatoria1() throws NoSuchMethodException {
         // Obtener clase
@@ -158,7 +157,6 @@ class CoverageMeasurementTest {
     }
 
     // Nodos de más debido a asignacion booleana
-    @Disabled
     @Test
     void testCoberturaTodosCaminosCurso1415Convocatoria1() throws NoSuchMethodException {
         // Obtener clase

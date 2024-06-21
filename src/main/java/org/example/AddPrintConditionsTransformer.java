@@ -1,15 +1,32 @@
 package org.example;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.ProtectionDomain;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.jgrapht.graph.DirectedPseudograph;
+import org.jgrapht.nio.Attribute;
+import org.jgrapht.nio.DefaultAttribute;
+import org.jgrapht.nio.dot.DOTExporter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -18,28 +35,73 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private Map<String, DirectedPseudograph<Integer, BooleanEdge>> grafosMetodos;
     static private Map<String, Set<Camino2Edge>> almacenCaminos;
     static private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
+    static private Map<String, Map<Integer, Integer>> nodoToLinenumber;
     static private Map<String, Set<Camino2Edge>> caminosRecorridos;
     static private Map<String, Camino2Edge> caminoActual;
     static private AddPrintConditionsTransformer instance;
+    static private TemplateEngine templateEngine = new TemplateEngine();
+    static private ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
 
     public void addNodoToIntger(String nombre){
         nodoToInteger.put(nombre, new HashMap<>());
+    }
+
+    public void addNodoLinenumber(String nombre){
+        nodoToLinenumber.put(nombre, new HashMap<>());
     }
 
     private static class ShutDownHook extends Thread {
         public void run() {
             long startTime = System.nanoTime();
             AddPrintConditionsTransformer.imprimirInforme();
-            long endTime = System.nanoTime();
+            /*
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.submit(() -> {
+                System.out.println("Ejecuto iniciado");
+                try {
+                    // Código para generar el informe usando Thymeleaf
+                    Context context = new Context();
+                    List<String> prueba = new ArrayList<>();
+                    prueba.add("Metodo 1");
+                    context.setVariable("methods", prueba);
+                    StringWriter stringWriter = new StringWriter();
+                    templateEngine.process("report", context, stringWriter);
+                    System.out.println("Procesado");
+                    System.out.println("REPORT:");
+                    System.out.println(stringWriter.toString());
 
-            long duration = (endTime - startTime) / 1000000;  //divide by 1000000 to get milliseconds.
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    AddPrintConditionsTransformer.imprimirInforme();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                executor.shutdownNow();
+            }
+            */
+            long endTime = System.nanoTime();
+            long duration = (endTime - startTime) / 1000000;  // Divide by 1000000 to get milliseconds.
             System.out.println(duration + " ms to execute the shutdown hook");
-            //AddPrintConditionsTransformer.imprimirCaminos();
-            //AddPrintConditionsTransformer.imprimirCaminosRecorridos();
         }
     }
 
     private AddPrintConditionsTransformer (){
+        templateResolver.setPrefix("/templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setTemplateMode("HTML");
+        templateEngine.setTemplateResolver(templateResolver);
+        templateEngine.process("report", new Context(), Writer.nullWriter());
         new AddPrintConditionsTransformer(false);
     }
 
@@ -55,6 +117,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         if (DEBUG) System.out.println("Prueba constructor");
         if (almacenCaminos == null) almacenCaminos = new HashMap<>();
         if (nodoToInteger == null) nodoToInteger = new HashMap<>();
+        if (nodoToLinenumber == null) nodoToLinenumber = new HashMap<>();
         if (caminosRecorridos == null) caminosRecorridos = new HashMap<>();
         if (caminoActual == null) caminoActual = new HashMap<>();
         if (grafosMetodos == null) grafosMetodos = new HashMap<>();
@@ -91,11 +154,55 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     static public void imprimirInforme(){
         System.out.println("---------------- Ejecucion terminada ----------------");
+        Context context = new Context();
+        List<String> pruebaHTML = new ArrayList<>();
+        pruebaHTML.add("Metodo 1");
+        context.setVariable("methods", pruebaHTML);
+        StringWriter stringWriter = new StringWriter();
+        templateEngine.process("report", context, stringWriter);
+        System.out.println("Procesado");
+        System.out.println("REPORT:");
+        System.out.println(stringWriter.toString());
         for (String metodo: almacenCaminos.keySet()){
             Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
             Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
+            DOTExporter<Integer, BooleanEdge> exporter = new DOTExporter<>();
+            Map<Integer, Integer> nodoToLinenumberMap = nodoToLinenumber.get(metodo);
+            //nodoToLinenumberMap.getOrDefault(v, v);
+            exporter.setVertexAttributeProvider((v) -> {
+                Map<String, Attribute> map = new LinkedHashMap<>();
+                map.put("label", DefaultAttribute.createAttribute(nodoToLinenumberMap.getOrDefault(v, v)));
+                return map;
+            });
+            exporter.setEdgeAttributeProvider((e) -> {
+                Map<String, Attribute> map = new LinkedHashMap<>();
+                map.put("label", DefaultAttribute.createAttribute(e.toString()));
+                return map;
+            });
+            Writer writer = new StringWriter();
+            exporter.exportGraph(transformGraphFromIntegerToLinenumber(metodo, grafosMetodos.get(metodo)), writer);
+            System.out.println(writer.toString());
+
+            /*
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(new URI("https://kroki.io/graphviz/svg"))
+                        .POST(HttpRequest.BodyPublishers.ofString(writer.toString()))
+                        .build();
+                HttpClient client = HttpClient.newHttpClient();
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                System.out.println(response.body());
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+             */
             System.out.println("Clase y metodo: " + metodo);
-            System.out.println("\tGrafo: " + grafosMetodos.get(metodo));
+            System.out.println("\tGrafo: " + transformGraphFromIntegerToLinenumber(metodo, grafosMetodos.get(metodo)));
             System.out.println("\tNumero de caminos total: " + todosCaminos.size());
             System.out.println("\t\tCaminos: [");
             if (DEBUG){
@@ -276,15 +383,13 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         caminoSaltoBool = isBranchBooleanAssignment(auxNode);
         //System.out.println("Por normal");
         caminoNormalBool = isBranchBooleanAssignment(in.getNext());
-        if (caminoSaltoBool){
-            if (!caminoNormalBool){
-                caminoNormalBool = isBooleanAssignment(findNextPredicateNode(in.getNext()));
-            }
+        if (caminoSaltoBool && !caminoNormalBool){
+            caminoNormalBool = isBooleanAssignment(findNextPredicateNode(in.getNext()));
         }
         return caminoNormalBool && caminoSaltoBool;
     }
 
-    public DirectedPseudograph<Integer, BooleanEdge> transformGraphToInteger(String metodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
+    static DirectedPseudograph<Integer, BooleanEdge> transformGraphToInteger(String metodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
         DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Map<AbstractInsnNode, Integer> nodeIntegerMap = nodoToInteger.get(metodo);
         for (AbstractInsnNode nodo: grafo.vertexSet()){
@@ -293,6 +398,25 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         for (BooleanEdge edge: grafo.edgeSet()){
             newGraph.addEdge(nodeIntegerMap.get(grafo.getEdgeSource(edge)),
                     nodeIntegerMap.get(grafo.getEdgeTarget(edge)),
+                    new BooleanEdge(edge.getType()));
+        }
+        return newGraph;
+    }
+
+    static DirectedPseudograph<Integer, BooleanEdge> transformGraphFromIntegerToLinenumber(String metodo, DirectedPseudograph<Integer, BooleanEdge> grafo){
+        DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
+        Map<Integer, Integer> integerLinenumberMap = nodoToLinenumber.get(metodo);
+        Map<Integer, Integer> numNodosPorLinea = new HashMap<>();
+        for (Integer nodo: grafo.vertexSet()){
+            // Si existe
+            if (numNodosPorLinea.get(nodo) != null){
+
+            }
+            newGraph.addVertex(integerLinenumberMap.get(nodo));
+        }
+        for (BooleanEdge edge: grafo.edgeSet()){
+            newGraph.addEdge(integerLinenumberMap.get(grafo.getEdgeSource(edge)),
+                    integerLinenumberMap.get(grafo.getEdgeTarget(edge)),
                     new BooleanEdge(edge.getType()));
         }
         return newGraph;
@@ -361,21 +485,42 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return null;
     }
 
+    public Integer findLinenumber(AbstractInsnNode in){
+        AbstractInsnNode target = in.getPrevious();
+        while (target != null){
+            if (target instanceof LineNumberNode){
+                return ((LineNumberNode) target).line;
+            }
+            target = target.getPrevious();
+        }
+        return null;
+    }
+
     DirectedPseudograph<AbstractInsnNode, BooleanEdge> getControlFlowGraph(InsnList insns, String idMetodo){
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Iterator<AbstractInsnNode> j = insns.iterator();
         Integer indiceNodo = 1;
         Map<AbstractInsnNode, Integer> nodeIntegerMap = nodoToInteger.get(idMetodo);
+        Map<Integer, Integer> nodeLinenumberMap = nodoToLinenumber.get(idMetodo);
 
         AbstractInsnNode in = j.next();
-        if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) indiceNodo++;
+        while(in.getOpcode() < 0){
+            in = in.getNext();
+        }
+        if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null){
+            nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
+            indiceNodo++;
+        }
         controlGraph.addVertex(in);
         AbstractInsnNode nextPredicate = findNextPredicateNode(in);
         while (isBooleanAssignment(nextPredicate)){
             nextPredicate = findNextPredicateNode(nextPredicate);
         }
         if (nextPredicate != null){
-            if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) indiceNodo++;
+            if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null){
+                nodeLinenumberMap.put(indiceNodo, findLinenumber(nextPredicate));
+                indiceNodo++;
+            }
             controlGraph.addVertex(nextPredicate);
             controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.DEFAULT));
         }
@@ -387,7 +532,10 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     System.out.println("Asignación booleana");
                     continue;
                 }
-                if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) indiceNodo++;
+                if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) {
+                    nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
+                    indiceNodo++;
+                }
                 controlGraph.addVertex(in);
                 // Busco el label de salto (donde va el programa si se evalua true)
                 if (in instanceof JumpInsnNode){
@@ -398,7 +546,10 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                             if (((LabelNode) target).equals(label)){
                                 nextPredicate = findNextPredicateNode(target);
                                 if (nextPredicate != null){
-                                    if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) indiceNodo++;
+                                    if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
+                                        nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
+                                        indiceNodo++;
+                                    }
                                     controlGraph.addVertex(nextPredicate);
                                     controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.TRUE));
                                 }
@@ -411,7 +562,10 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 // Busco el siguiente nodo predicado por el camino FALSE
                 nextPredicate = findNextPredicateNode(in);
                 if (nextPredicate != null){
-                    if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) indiceNodo++;
+                    if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
+                        nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
+                        indiceNodo++;
+                    }
                     controlGraph.addVertex(nextPredicate);
                     controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.FALSE));
                 }
@@ -443,7 +597,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
-
         /*
         try {
             TraceClassVisitor cv = new TraceClassVisitor(new PrintWriter(System.out));
@@ -454,7 +607,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
 
          */
-
 
         // System.out.println("I'm the ClassFileTransformer");
         ClassNode cn = new ClassNode(ASM4);
@@ -474,6 +626,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             }
             if (isAnnotated) {
                 nodoToInteger.put(idMetodo, new HashMap<>());
+                nodoToLinenumber.put(idMetodo, new HashMap<>());
                 caminosRecorridos.put(idMetodo, new HashSet<>());
                 caminoActual.put(idMetodo, new Camino2Edge(null, null, null, null, null));
                 if (DEBUG) System.out.println("I'm transforming my own classes: ".concat(className));
@@ -504,6 +657,37 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }catch (Exception e){
                     e.printStackTrace();
                 }
+
+                /*
+                try {
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(new URI("https://kroki.io/graphviz/svg"))
+                            .POST(HttpRequest.BodyPublishers.ofString("" +
+                                    "digraph G {\n" +
+                                    "  1 [ label=\"21\" ];\n" +
+                                    "  2 [ label=\"23\" ];\n" +
+                                    "  3 [ label=\"27\" ];\n" +
+                                    "  1 -> 2 [ label=\"DEFAULT\" ];\n" +
+                                    "  2 -> 2 [ label=\"TRUE\" ];\n" +
+                                    "  2 -> 2 [ label=\"FALSE\" ];\n" +
+                                    "  2 -> 2 [ label=\"TRUE\" ];\n" +
+                                    "  2 -> 2 [ label=\"FALSE\" ];\n" +
+                                    "  2 -> 3 [ label=\"TRUE\" ];\n" +
+                                    "  2 -> 3 [ label=\"FALSE\" ];\n" +
+                                    "}"))
+                            .build();
+                    HttpClient client = HttpClient.newHttpClient();
+                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                    System.out.println("HTTP RESPONSE");
+                    System.out.println(response.body());
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException(e);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                 */
             }
         }
 
