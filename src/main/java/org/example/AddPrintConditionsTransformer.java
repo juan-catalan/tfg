@@ -141,7 +141,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 return map;
             });
             Writer writer = new StringWriter();
-            exporter.exportGraph(transformGraphFromIntegerToLinenumber(metodo, grafosMetodos.get(metodo)), writer);
+            // exporter.exportGraph(transformGraphFromIntegerToLinenumber(metodo, grafosMetodos.get(metodo)), writer);
+            exporter.exportGraph(grafosMetodos.get(metodo), writer);
             System.out.println(writer.toString());
 
             /*
@@ -163,7 +164,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
              */
             System.out.println("Clase y metodo: " + metodo);
-            System.out.println("\tGrafo: " + transformGraphFromIntegerToLinenumber(metodo, grafosMetodos.get(metodo)));
+            System.out.println("\tGrafo: " + grafosMetodos.get(metodo));
             System.out.println("\tNumero de caminos total: " + todosCaminos.size());
             System.out.println("\t\tCaminos: [");
             if (DEBUG){
@@ -332,7 +333,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
         if (auxNode.getOpcode() != ICONST_0 && auxNode.getOpcode() != ICONST_1)
             return false;
-        //System.out.println("ICONST");
+        System.out.println("ICONST");
         auxNode = auxNode.getNext();
         // Paso del bytecode auxiliar
         while (auxNode.getOpcode() < 0){
@@ -340,10 +341,13 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
         if (auxNode.getOpcode() == GOTO) {
             auxNode = findJumpDestiny((JumpInsnNode) auxNode);
-            //System.out.println("GOTO");
+            System.out.println("GOTO");
+        }
+        while (auxNode.getOpcode() < 0){
+            auxNode = auxNode.getNext();
         }
         if (auxNode.getOpcode() == ISTORE) {
-            //System.out.println("ISTORE");
+            System.out.println("ISTORE");
             return true;
         }
         else return false;
@@ -352,15 +356,18 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     public boolean isBooleanAssignment(AbstractInsnNode in){
         if (!(in instanceof JumpInsnNode)) return false;
         boolean caminoSaltoBool = false, caminoNormalBool = false;
-        //System.out.println("Checkeando boolean assignment");
+        System.out.println("Checkeando boolean assignment");
         AbstractInsnNode auxNode = findJumpDestiny((JumpInsnNode) in);
-        //System.out.println("Por salto");
+        System.out.println("Por salto");
         caminoSaltoBool = isBranchBooleanAssignment(auxNode);
-        //System.out.println("Por normal");
+        System.out.println("Por normal");
         caminoNormalBool = isBranchBooleanAssignment(in.getNext());
+        /*
         if (caminoSaltoBool && !caminoNormalBool){
             caminoNormalBool = isBooleanAssignment(findNextPredicateNode(in.getNext()));
         }
+
+         */
         return caminoNormalBool && caminoSaltoBool;
     }
 
@@ -406,7 +413,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     target.equals(nextNode)
             ){
                 // Avanzo si es bytecode auxiliar
-                while (nextNode.getOpcode() < 0) nextNode = nextNode.getNext();
+                //while (nextNode.getOpcode() < 0) nextNode = nextNode.getNext();
                 return nextNode;
             }
             nextNode = nextNode.getNext();
@@ -440,7 +447,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     }
 
     public AbstractInsnNode findNextPredicateNode(AbstractInsnNode in){
-        AbstractInsnNode target = in.getNext();
+        AbstractInsnNode target = in;
         while (target != null){
             int opTarget = target.getOpcode();
             // Si es un goto cuidado revisar
@@ -487,9 +494,10 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             indiceNodo++;
         }
         controlGraph.addVertex(in);
-        AbstractInsnNode nextPredicate = findNextPredicateNode(in);
+        AbstractInsnNode nextPredicate;
+        nextPredicate = findNextPredicateNode(in);
         while (isBooleanAssignment(nextPredicate)){
-            nextPredicate = findNextPredicateNode(nextPredicate);
+            nextPredicate = findNextPredicateNode(nextPredicate.getNext());
         }
         if (nextPredicate != null){
             if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null){
@@ -514,12 +522,24 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 controlGraph.addVertex(in);
                 // Busco el label de salto (donde va el programa si se evalua true)
                 if (in instanceof JumpInsnNode){
+                    AbstractInsnNode target = findJumpDestiny((JumpInsnNode) in);
+                    nextPredicate = findNextPredicateNode(target);
+                    while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+                    if (nextPredicate != null){
+                        if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
+                            nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
+                            indiceNodo++;
+                        }
+                        controlGraph.addVertex(nextPredicate);
+                        controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.TRUE));
+                    }
+                    /*
                     LabelNode label = ((JumpInsnNode) in).label;
-                    AbstractInsnNode target = in.getNext();
                     while (true) {
                         if (target instanceof LabelNode){
                             if (((LabelNode) target).equals(label)){
                                 nextPredicate = findNextPredicateNode(target);
+                                while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate);
                                 if (nextPredicate != null){
                                     if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
                                         nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
@@ -533,9 +553,11 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                         }
                         target = target.getNext();
                     }
+                     */
                 }
                 // Busco el siguiente nodo predicado por el camino FALSE
-                nextPredicate = findNextPredicateNode(in);
+                nextPredicate = findNextPredicateNode(in.getNext());
+                while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
                 if (nextPredicate != null){
                     if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
                         nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
