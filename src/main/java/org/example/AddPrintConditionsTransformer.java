@@ -1,9 +1,7 @@
 package org.example;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.awt.*;
+import java.io.*;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.net.URI;
@@ -13,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.ProtectionDomain;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +43,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private AddPrintConditionsTransformer instance;
     static private TemplateEngine templateEngine = new TemplateEngine();
     static private ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+    static private Desktop desktop;
 
     public void addNodoToIntger(String nombre){
         nodoToInteger.put(nombre, new HashMap<>());
@@ -95,6 +95,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         initializeThymeleaf();
         ShutDownHook jvmShutdownHook = new ShutDownHook();
         Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
+        desktop = Desktop.getDesktop();
     }
 
     static public void imprimirCaminos(){
@@ -141,6 +142,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         Writer writer = new StringWriter();
         // exporter.exportGraph(transformGraphFromIntegerToLinenumber(metodo, grafosMetodos.get(metodo)), writer);
         exporter.exportGraph(grafosMetodos.get(metodo), writer);
+        //System.out.println(writer);
         return writer.toString();
     }
 
@@ -150,24 +152,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         for (String metodo: almacenCaminos.keySet()){
             Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
             Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
-            /*
-            try {
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(new URI("https://kroki.io/graphviz/svg"))
-                        .POST(HttpRequest.BodyPublishers.ofString(writer.toString()))
-                        .build();
-                HttpClient client = HttpClient.newHttpClient();
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                System.out.println(response.body());
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-             */
             System.out.println("Clase y metodo: " + metodo);
             System.out.println("\tGrafo: " + grafosMetodos.get(metodo));
             System.out.println("\tNumero de caminos total: " + todosCaminos.size());
@@ -208,10 +192,16 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             templateEngine.process("report", context, fileWriter);
         } catch (IOException e) {
             templateEngine.process("report", context, stringWriter);
+            System.out.println(stringWriter.toString());
         }
-        System.out.println("Procesado");
-        System.out.println("REPORT:");
-        System.out.println(stringWriter.toString());
+
+        if (desktop != null){
+            try {
+                desktop.open(new File("coverageReport/report.html"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
 
@@ -480,6 +470,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             }
             target = target.getPrevious();
         }
+        System.out.println("No encuentra");
         return null;
     }
 
@@ -626,33 +617,16 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     grafosMetodos.put(idMetodo, transformGraphToInteger(idMetodo, grafo));
                     byte[] output = new byte[graphToDot(idMetodo).getBytes().length];
                     Deflater compresser = new Deflater();
-                    compresser.setInput(graphToDot(idMetodo).getBytes());
+                    compresser.setInput(graphToDot(idMetodo).getBytes("UTF-8"));
                     compresser.finish();
                     compresser.deflate(output);
-                    byte[] outputB64 = Base64.getEncoder().encode(output);
-                    System.out.println(outputB64);
+                    //System.out.println("output");
+                    //System.out.println(new String(output));
+                    String outputB64 = Base64.getEncoder().encodeToString(output);
+                    //System.out.println("outputB64");
+                    //System.out.println(outputB64);
 
-                    /*
-                    try {
-                        HttpRequest request = HttpRequest.newBuilder()
-                                .uri(new URI("https://kroki.io/graphviz/png/" + new String(outputB64)))
-                                .GET()
-                                .build();
-                        HttpClient client = HttpClient.newHttpClient();
-                        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                        System.out.println("HTTP RESPONSE");
-                        System.out.println(response.body());
-                        grafosRenderedMetodos.put(idMetodo, response.body());
-                    } catch (URISyntaxException e) {
-                        throw new RuntimeException(e);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                     */
-                    grafosRenderedMetodos.put(idMetodo,"https://kroki.io/graphviz/png/" + new String(outputB64));
+                    grafosRenderedMetodos.put(idMetodo,"https://kroki.io/graphviz/png/" + outputB64);
 
 
 
@@ -668,37 +642,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }catch (Exception e){
                     e.printStackTrace();
                 }
-
-                /*
-                try {
-                    HttpRequest request = HttpRequest.newBuilder()
-                            .uri(new URI("https://kroki.io/graphviz/svg"))
-                            .POST(HttpRequest.BodyPublishers.ofString("" +
-                                    "digraph G {\n" +
-                                    "  1 [ label=\"21\" ];\n" +
-                                    "  2 [ label=\"23\" ];\n" +
-                                    "  3 [ label=\"27\" ];\n" +
-                                    "  1 -> 2 [ label=\"DEFAULT\" ];\n" +
-                                    "  2 -> 2 [ label=\"TRUE\" ];\n" +
-                                    "  2 -> 2 [ label=\"FALSE\" ];\n" +
-                                    "  2 -> 2 [ label=\"TRUE\" ];\n" +
-                                    "  2 -> 2 [ label=\"FALSE\" ];\n" +
-                                    "  2 -> 3 [ label=\"TRUE\" ];\n" +
-                                    "  2 -> 3 [ label=\"FALSE\" ];\n" +
-                                    "}"))
-                            .build();
-                    HttpClient client = HttpClient.newHttpClient();
-                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                    System.out.println("HTTP RESPONSE");
-                    System.out.println(response.body());
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                 */
             }
         }
 
