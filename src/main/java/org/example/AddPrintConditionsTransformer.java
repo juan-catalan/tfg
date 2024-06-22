@@ -317,14 +317,16 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 (opCode == ATHROW));
     }
 
-    public boolean isBranchBooleanAssignment(AbstractInsnNode in){
+    public Optional<BooleanAssignmentInfo> isBranchBooleanAssignment(AbstractInsnNode in){
         AbstractInsnNode auxNode = in;
+        boolean value;
         // Paso del bytecode auxiliar
         while (auxNode.getOpcode() < 0){
             auxNode = auxNode.getNext();
         }
-        if (auxNode.getOpcode() != ICONST_0 && auxNode.getOpcode() != ICONST_1)
-            return false;
+        if (auxNode.getOpcode() == ICONST_0) value = false;
+        else if (auxNode.getOpcode() == ICONST_1) value = true;
+        else return Optional.empty();
         //System.out.println("ICONST");
         auxNode = auxNode.getNext();
         // Paso del bytecode auxiliar
@@ -339,20 +341,22 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             auxNode = auxNode.getNext();
         }
         if (auxNode.getOpcode() == ISTORE) {
-            //System.out.println("ISTORE");
-            return true;
+            int index = ((VarInsnNode) auxNode).var;
+            return Optional.of(new BooleanAssignmentInfo(value, index));
         }
-        else return false;
+        else return Optional.empty();
     }
 
     public boolean isBooleanAssignment(AbstractInsnNode in){
         if (!(in instanceof JumpInsnNode)) return false;
-        boolean caminoSaltoBool, caminoNormalBool;
+        Optional<BooleanAssignmentInfo> caminoSaltoBool, caminoNormalBool;
         //System.out.println("Checkeando boolean assignment");
         AbstractInsnNode auxNode = findJumpDestiny((JumpInsnNode) in);
         //System.out.println("Por salto");
+        //System.out.println(findLinenumber(in));
         caminoSaltoBool = isBranchBooleanAssignment(auxNode);
         //System.out.println("Por normal");
+        //System.out.println(findLinenumber(in.getNext()));
         caminoNormalBool = isBranchBooleanAssignment(in.getNext());
         /*
         if (caminoSaltoBool && !caminoNormalBool){
@@ -360,7 +364,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
 
          */
-        return caminoNormalBool && caminoSaltoBool;
+        return caminoNormalBool.isPresent() && caminoSaltoBool.isPresent()
+                && caminoNormalBool.get().value() != caminoSaltoBool.get().value()
+                && caminoNormalBool.get().index() == caminoSaltoBool.get().index();
     }
 
     static DirectedPseudograph<Integer, BooleanEdge> transformGraphToInteger(String metodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
