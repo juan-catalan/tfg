@@ -12,9 +12,6 @@ import java.net.http.HttpResponse;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.Deflater;
 
 import org.jgrapht.graph.DirectedPseudograph;
@@ -523,7 +520,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
                     if (nextPredicate != null){
                         if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
-                            nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
+                            nodeLinenumberMap.put(indiceNodo, findLinenumber(nextPredicate));
                             indiceNodo++;
                         }
                         controlGraph.addVertex(nextPredicate);
@@ -535,7 +532,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
                 if (nextPredicate != null){
                     if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
-                        nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
+                        nodeLinenumberMap.put(indiceNodo, findLinenumber(nextPredicate));
                         indiceNodo++;
                     }
                     controlGraph.addVertex(nextPredicate);
@@ -622,10 +619,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     compresser.deflate(output);
                     //System.out.println("output");
                     //System.out.println(new String(output));
-                    String outputB64 = Base64.getEncoder().encodeToString(output);
-                    //System.out.println("outputB64");
-                    //System.out.println(outputB64);
-
+                    String outputB64 = Base64.getUrlEncoder().encodeToString(output);
                     grafosRenderedMetodos.put(idMetodo,"https://kroki.io/graphviz/png/" + outputB64);
 
 
