@@ -126,12 +126,12 @@ class GetControlFlowGraphTest {
         grafo.addVertex(6);
         // Añado las aristas
         grafo.addEdge(1,2, new BooleanEdge(EdgeType.DEFAULT));
-        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(2,4, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(3,2, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(3,4, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,6, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(2,4, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(3,2, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(3,4, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,6, new BooleanEdge(EdgeType.TRUE));
         // Compruebo que son grafos isomorfos
         verificarGrafo(org.example.ejerciciosExamen.curso1617.Convocatoria1.class, "buscar", grafo);
     }
@@ -149,12 +149,12 @@ class GetControlFlowGraphTest {
         grafo.addVertex(6);
         // Añado las aristas
         grafo.addEdge(1,2, new BooleanEdge(EdgeType.DEFAULT));
-        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
         grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(3,3, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(3,4, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,6, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(3,3, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(3,4, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,6, new BooleanEdge(EdgeType.TRUE));
         // ASI ES SI TENEMOS EN CUENTA EL NODE PREDICADO EXTRA DE LA ASIGNACION BOOLEANA
         /*
         // Añado los vertices
@@ -167,14 +167,14 @@ class GetControlFlowGraphTest {
         grafo.addVertex(7);
         // Añado las aristas
         grafo.addEdge(1,7, new BooleanEdge(EdgeType.DEFAULT));
-        grafo.addEdge(7,2, new BooleanEdge(EdgeType.TRUE));
         grafo.addEdge(7,2, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(7,2, new BooleanEdge(EdgeType.TRUE));
         grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(3,3, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(3,4, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,6, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(3,3, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(3,4, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,6, new BooleanEdge(EdgeType.TRUE));
          */
         verificarGrafo(org.example.ejerciciosExamen.curso1415.Convocatoria2.class, "imagen", grafo);
     }
@@ -193,16 +193,16 @@ class GetControlFlowGraphTest {
         grafo.addVertex(7);
         // Añado las aristas
         grafo.addEdge(1,2, new BooleanEdge(EdgeType.DEFAULT));
-        grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(2,7, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(3,4, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(3,7, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,7, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(5,6, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(6,7, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(6,5, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(6,7, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,7, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(3,4, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(3,7, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,7, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(5,6, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(6,7, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(6,5, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(6,7, new BooleanEdge(EdgeType.FALSE));
         // ASI ES SI TENEMOS EN CUENTA EL NODE PREDICADO EXTRA DE LA ASIGNACION BOOLEANA
         /*
         // Añado los vertices
@@ -215,14 +215,14 @@ class GetControlFlowGraphTest {
         grafo.addVertex(7);
         // Añado las aristas
         grafo.addEdge(1,7, new BooleanEdge(EdgeType.DEFAULT));
-        grafo.addEdge(7,2, new BooleanEdge(EdgeType.TRUE));
         grafo.addEdge(7,2, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(7,2, new BooleanEdge(EdgeType.TRUE));
         grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(3,3, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(3,4, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,6, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(3,3, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(3,4, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,6, new BooleanEdge(EdgeType.TRUE));
          */
         verificarGrafo(org.example.ejerciciosExamen.curso1516.Convocatoria1.class, "esPrimo", grafo);
     }
@@ -241,14 +241,14 @@ class GetControlFlowGraphTest {
         grafo.addVertex(8);
         // Añado las aristas
         grafo.addEdge(1,2, new BooleanEdge(EdgeType.DEFAULT));
-        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(2,4, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,8, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(5,6, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(5,7, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(8,4, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(2,4, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,8, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(5,6, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(5,7, new BooleanEdge(EdgeType.FALSE));
         grafo.addEdge(8,4, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(8,4, new BooleanEdge(EdgeType.FALSE));
         verificarGrafo(org.example.ejerciciosExamen.curso1819.Convocatoria1.class, "buscar", grafo);
     }
 
@@ -266,14 +266,14 @@ class GetControlFlowGraphTest {
         grafo.addVertex(8);
         // Añado las aristas
         grafo.addEdge(1,2, new BooleanEdge(EdgeType.DEFAULT));
-        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(2,4, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(4,5, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(4,6, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(6,7, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(6,8, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(8,6, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(2,4, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(4,6, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(6,7, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(6,8, new BooleanEdge(EdgeType.TRUE));
         grafo.addEdge(8,6, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(8,6, new BooleanEdge(EdgeType.FALSE));
         verificarGrafo(org.example.ejerciciosExamen.curso1920.Convocatoria1.class, "minimo", grafo);
     }
 
@@ -288,12 +288,12 @@ class GetControlFlowGraphTest {
         grafo.addVertex(5);
         // Añado las aristas
         grafo.addEdge(1,2, new BooleanEdge(EdgeType.DEFAULT));
-        grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(2,4, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(4,2, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(5,2, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,4, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(4,2, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.FALSE));
         grafo.addEdge(5,2, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(5,2, new BooleanEdge(EdgeType.TRUE));
         verificarGrafo(org.example.ejerciciosExamen.curso2122.Convocatoria1.class, "replaceDigits", grafo);
     }
 
@@ -308,12 +308,12 @@ class GetControlFlowGraphTest {
         grafo.addVertex(5);
         // Añado las aristas
         grafo.addEdge(1,2, new BooleanEdge(EdgeType.DEFAULT));
-        grafo.addEdge(2,3, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(2,4, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(4,2, new BooleanEdge(EdgeType.FALSE));
-        grafo.addEdge(4,5, new BooleanEdge(EdgeType.TRUE));
-        grafo.addEdge(5,2, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(2,3, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(2,4, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(4,2, new BooleanEdge(EdgeType.TRUE));
+        grafo.addEdge(4,5, new BooleanEdge(EdgeType.FALSE));
         grafo.addEdge(5,2, new BooleanEdge(EdgeType.FALSE));
+        grafo.addEdge(5,2, new BooleanEdge(EdgeType.TRUE));
         verificarGrafo(org.example.ejerciciosExamen.curso2223.Convocatoria1.class, "calcularPuntuacion", grafo);
     }
 }

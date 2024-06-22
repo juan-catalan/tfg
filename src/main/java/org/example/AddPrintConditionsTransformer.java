@@ -524,7 +524,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                             indiceNodo++;
                         }
                         controlGraph.addVertex(nextPredicate);
-                        controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.TRUE));
+                        controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.FALSE));
                     }
                 }
                 // Busco el siguiente nodo predicado por el camino FALSE
@@ -536,7 +536,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                         indiceNodo++;
                     }
                     controlGraph.addVertex(nextPredicate);
-                    controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.FALSE));
+                    controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.TRUE));
                 }
             }
         }
