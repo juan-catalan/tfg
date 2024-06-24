@@ -208,7 +208,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         context.setVariable("methods", methodReportDTOList);
         StringWriter stringWriter = new StringWriter();
         try {
-            Writer fileWriter = new FileWriter("coverageReport/report.html");
+            File reportDirectory = new File("coverageReport");
+            if (!reportDirectory.exists()) reportDirectory.mkdirs();
+            Writer fileWriter = new FileWriter(reportDirectory.getName() + "/report.html");
             templateEngine.process("report", context, fileWriter);
             if (desktop != null){
                 desktop.open(new File("coverageReport/report.html"));
