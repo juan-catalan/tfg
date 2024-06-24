@@ -40,6 +40,9 @@ tasks.shadowJar{
     archiveBaseName.set("agent")
     archiveClassifier.set("all")
     archiveVersion.set("")
+    isEnableRelocation = true
+    relocationPrefix = "coverage2edge"
+
 }
 
 tasks.jar {
