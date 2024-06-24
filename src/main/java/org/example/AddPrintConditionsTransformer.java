@@ -149,6 +149,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         for (String metodo: almacenCaminos.keySet()){
             Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
             Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
+            Map<Integer, Integer> nodoToLinenumberMap  = nodoToLinenumber.get(metodo);
             System.out.println("Clase y metodo: " + metodo);
             System.out.println("\tGrafo: " + grafosMetodos.get(metodo));
             System.out.println("\tNumero de caminos total: " + todosCaminos.size());
@@ -178,7 +179,29 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 if (!recorridosCaminos.contains(camino)) System.out.println("\t\t\t" + camino);
             }));
             System.out.println("\t\t]");
-            MethodReportDTO methodReportDTO = new MethodReportDTO(metodo, graphToDot(metodo), grafosRenderedMetodos.get(metodo), todosCaminos.stream().map(c -> c.toString()).toList(), recorridosCaminos.stream().map(c -> c.toString()).toList());
+            MethodReportDTO methodReportDTO = new MethodReportDTO(metodo,
+                    graphToDot(metodo),
+                    grafosRenderedMetodos.get(metodo),
+                    todosCaminos.stream().map(c -> {
+                        if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
+                                || !nodoToLinenumberMap.containsKey(c.nodoMedio)
+                                || !nodoToLinenumberMap.containsKey(c.nodoFinal)){
+                            return c.toString();
+                        }
+                        else {
+                            return new Camino2Edge(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal)).toString();
+                        }
+                    }).toList(),
+                    recorridosCaminos.stream().map(c -> {
+                        if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
+                                || !nodoToLinenumberMap.containsKey(c.nodoMedio)
+                                || !nodoToLinenumberMap.containsKey(c.nodoFinal)){
+                            return c.toString();
+                        }
+                        else {
+                            return new Camino2Edge(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal)).toString();
+                        }
+                    }).toList());
             methodReportDTOList.add(methodReportDTO);
         }
         Context context = new Context();
@@ -187,17 +210,12 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         try {
             Writer fileWriter = new FileWriter("coverageReport/report.html");
             templateEngine.process("report", context, fileWriter);
+            if (desktop != null){
+                desktop.open(new File("coverageReport/report.html"));
+            }
         } catch (IOException e) {
             templateEngine.process("report", context, stringWriter);
             System.out.println(stringWriter.toString());
-        }
-
-        if (desktop != null){
-            try {
-                desktop.open(new File("coverageReport/report.html"));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 
@@ -292,14 +310,14 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     while (true) {
                         if (target instanceof LabelNode){
                             if (((LabelNode) target).equals(label)){
-                                insns.insert(target, addMarkEdge(claseYmetodo, EdgeType.TRUE));
+                                insns.insert(target, addMarkEdge(claseYmetodo, EdgeType.FALSE));
                                 break;
                             }
                         }
                         target = target.getNext();
                     }
                     // Añado el camino del false
-                    insns.insert(in, addMarkEdge(claseYmetodo, EdgeType.FALSE));
+                    insns.insert(in, addMarkEdge(claseYmetodo, EdgeType.TRUE));
                 }
                 // Si son nodos de finalizacion
                 else {
