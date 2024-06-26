@@ -150,6 +150,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
             Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
             Map<Integer, Integer> nodoToLinenumberMap  = nodoToLinenumber.get(metodo);
+            /*
             System.out.println("Clase y metodo: " + metodo);
             System.out.println("\tGrafo: " + grafosMetodos.get(metodo));
             System.out.println("\tNumero de caminos total: " + todosCaminos.size());
@@ -179,19 +180,25 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 if (!recorridosCaminos.contains(camino)) System.out.println("\t\t\t" + camino);
             }));
             System.out.println("\t\t]");
+             */
             MethodReportDTO methodReportDTO = new MethodReportDTO(metodo,
                     graphToDot(metodo),
                     grafosRenderedMetodos.get(metodo),
                     todosCaminos.stream().map(c -> {
                         if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
                                 || !nodoToLinenumberMap.containsKey(c.nodoMedio)
-                                || !nodoToLinenumberMap.containsKey(c.nodoFinal)){
+                                || !nodoToLinenumberMap.containsKey(c.nodoFinal))
                             return c.toString();
+                        else
+                            return new Camino2Edge(
+                                    nodoToLinenumberMap.get(c.nodoInicio),
+                                    c.aristaInicioMedio,
+                                    nodoToLinenumberMap.get(c.nodoMedio),
+                                    c.aristaMedioFinal,
+                                    nodoToLinenumberMap.get(c.nodoFinal))
+                                    .toString();
                         }
-                        else {
-                            return new Camino2Edge(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal)).toString();
-                        }
-                    }).toList(),
+                    ).toList(),
                     recorridosCaminos.stream().map(c -> {
                         if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
                                 || !nodoToLinenumberMap.containsKey(c.nodoMedio)

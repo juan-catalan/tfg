@@ -4,6 +4,9 @@ package org.example;
 import org.example.ejerciciosExamen.curso1415.Convocatoria2;
 import org.example.ejerciciosExamen.curso1516.Convocatoria1;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class Main {
     @Coverage2Edge
@@ -73,6 +76,17 @@ public class Main {
         }
     }
 
+    @Coverage2Edge
+    public static List<Integer> paresHasta(int max){
+        List<Integer> listaPares = new ArrayList<>();
+        for (int i = 0; i<=max; i++){
+            if (i % 2 == 0){
+                listaPares.add(i);
+            }
+        }
+        return listaPares;
+    }
+
 
     public static void main(String[] args) {
         antiguoMain(2,1);
@@ -95,6 +109,8 @@ public class Main {
 
 
         antiguoMain(1,2);
+
+        paresHasta(2);
     }
 
 }
