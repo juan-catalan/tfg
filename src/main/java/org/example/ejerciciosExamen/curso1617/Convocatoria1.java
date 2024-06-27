@@ -16,7 +16,7 @@ public class Convocatoria1 {
      *         devuelve el índice de la componente en la que se encuentra.
      *         En caso contrario, devuelve -1;
      */
-    @Coverage2Edge
+    @Coverage2Edge(numCaminosImposibles = 1)
     public static int buscar(int[] vector, int datoBuscado) {
         int i = 0;
 

@@ -3,7 +3,7 @@ package org.example.ejerciciosExamen.curso1415;
 import org.example.Coverage2Edge;
 
 public class Convocatoria2 {
-    @Coverage2Edge
+    @Coverage2Edge(numCaminosImposibles = 1)
     public static int imagen(int n) {
         boolean negativo = n < 0;
         if (negativo) {

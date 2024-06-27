@@ -41,6 +41,13 @@
                 <div th:id="${method}" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
                     <div class="accordion-body">
                         <h1 th:text="${method.nombre}">Clase y nombre del metodo</h1>
+                        <h2>
+                            Porcentaje de cobertura
+                        </h2>
+                        <p>
+                            <span th:text="${method.porcentajeCobertura}">Porcentaje de cobertura</span>
+                            %
+                        </p>
                         <h2>Grafo</h2>
                         <p th:if="${method.grafoImagen == null}" th:text="${method.grafo}">El grafo no esta disponible</p>
                         <img th:src="${method.grafoImagen}">

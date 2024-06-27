@@ -32,6 +32,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static boolean DEBUG = true;
     static private Map<String, DirectedPseudograph<Integer, BooleanEdge>> grafosMetodos;
     static private Map<String, String> grafosRenderedMetodos;
+    static private Map<String, Integer> caminosImposiblesMetodo;
     static private Map<String, Set<Camino2Edge>> almacenCaminos;
     static private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
     static private Map<String, Map<Integer, Integer>> nodoToLinenumber;
@@ -89,6 +90,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         if (caminoActual == null) caminoActual = new HashMap<>();
         if (grafosMetodos == null) grafosMetodos = new HashMap<>();
         if (grafosRenderedMetodos == null) grafosRenderedMetodos = new HashMap<>();
+        if (caminosImposiblesMetodo == null) caminosImposiblesMetodo = new HashMap<>();
         initializeThymeleaf();
         ShutDownHook jvmShutdownHook = new ShutDownHook();
         Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
@@ -208,7 +210,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                         else {
                             return new Camino2Edge(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal)).toString();
                         }
-                    }).toList());
+                    }).toList(),
+                    100.0D * (recorridosCaminos.size()) / (todosCaminos.size() - caminosImposiblesMetodo.get(metodo))
+                    );
             methodReportDTOList.add(methodReportDTO);
         }
         Context context = new Context();
@@ -623,6 +627,16 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             boolean isAnnotated = false;
             if(mn.visibleAnnotations != null) for(AnnotationNode an: mn.visibleAnnotations) {
                 if (an.desc.equals(Coverage2Edge.class.descriptorString())){
+                    if (an.values != null){
+                        for (int i = 0; i < an.values.size(); i++) {
+                            if (an.values.get(i).equals("numCaminosImposibles")){
+                                caminosImposiblesMetodo.put(idMetodo, (Integer) an.values.get(i + 1));
+                                break;
+                            }
+                        }
+                    } else {
+                        caminosImposiblesMetodo.put(idMetodo, 0);
+                    }
                     isAnnotated = true;
                 }
             }

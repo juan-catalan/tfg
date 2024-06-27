@@ -8,7 +8,7 @@ public class Convocatoria1 {
      * @return «true» si y solo si «n» es un número primo (es decir,
      *         si es positivo y tiene exactamente dos divisores: 1 y n
      */
-    @Coverage2Edge
+    @Coverage2Edge(numCaminosImposibles = 1)
     public static boolean esPrimo(int n) {
         boolean esPrimo;
         if (n == 2) { // L0
