@@ -4,8 +4,8 @@ package org.example;
 import java.util.Objects;
 
 public class Camino2Edge {
-    Integer nodoInicio, nodoMedio, nodoFinal;
-    EdgeType aristaInicioMedio, aristaMedioFinal;
+    public Integer nodoInicio, nodoMedio, nodoFinal;
+    public EdgeType aristaInicioMedio, aristaMedioFinal;
 
     public Camino2Edge(Integer nodoIni, EdgeType aristaIniMedio, Integer nodoMedio, EdgeType aristaMedioFin, Integer nodoFinal){
         this.nodoInicio = nodoIni;

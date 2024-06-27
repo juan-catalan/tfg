@@ -190,7 +190,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                         if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
                                 || !nodoToLinenumberMap.containsKey(c.nodoMedio)
                                 || !nodoToLinenumberMap.containsKey(c.nodoFinal))
-                            return c.toString();
+                            return c;
                         else
                             return new Camino2Edge(
                                     nodoToLinenumberMap.get(c.nodoInicio),
@@ -198,20 +198,20 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                                     nodoToLinenumberMap.get(c.nodoMedio),
                                     c.aristaMedioFinal,
                                     nodoToLinenumberMap.get(c.nodoFinal))
-                                    .toString();
+                                    ;
                         }
                     ).toList(),
                     recorridosCaminos.stream().map(c -> {
                         if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
                                 || !nodoToLinenumberMap.containsKey(c.nodoMedio)
                                 || !nodoToLinenumberMap.containsKey(c.nodoFinal)){
-                            return c.toString();
+                            return c;
                         }
                         else {
-                            return new Camino2Edge(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal)).toString();
+                            return new Camino2Edge(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal));
                         }
                     }).toList(),
-                    100.0D * (recorridosCaminos.size()) / (todosCaminos.size() - caminosImposiblesMetodo.get(metodo))
+                    (100.0D * (recorridosCaminos.size()) / (todosCaminos.size() - caminosImposiblesMetodo.get(metodo)))
                     );
             methodReportDTOList.add(methodReportDTO);
         }
