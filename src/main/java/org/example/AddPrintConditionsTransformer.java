@@ -186,6 +186,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             MethodReportDTO methodReportDTO = new MethodReportDTO(metodo,
                     graphToDot(metodo),
                     grafosRenderedMetodos.get(metodo),
+                    caminosImposiblesMetodo.get(metodo),
                     todosCaminos.stream().map(c -> {
                         if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
                                 || !nodoToLinenumberMap.containsKey(c.nodoMedio)

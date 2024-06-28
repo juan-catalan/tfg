@@ -45,6 +45,7 @@
                         <h2>
                             Porcentaje de cobertura
                         </h2>
+                        <p th:if="${method.caminosImposibles} > 0" th:text="|Con ${method.caminosImposibles} caminos imposibles|">Caminos imposibles</p>
                         <p class="fs-5">
                             <span th:classappend="${method.porcentajeCobertura} >= 85 ? text-bg-success : (${method.porcentajeCobertura} >= 50 ? text-bg-warning : text-bg-danger)"
                                   class="badge rounded-pill"
