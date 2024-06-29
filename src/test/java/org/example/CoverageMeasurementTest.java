@@ -1,22 +1,9 @@
 package org.example;
 
-import org.jgrapht.graph.DirectedPseudograph;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.MethodNode;
-
-import java.io.IOException;
-import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.objectweb.asm.Opcodes.ASM4;
 
 class CoverageMeasurementTest {
     static private String getClassName(Class clase){
