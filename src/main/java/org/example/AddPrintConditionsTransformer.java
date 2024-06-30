@@ -497,6 +497,13 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             }
             target = target.getPrevious();
         }
+        target = in.getNext();
+        while (target != null){
+            if (target instanceof LineNumberNode){
+                return ((LineNumberNode) target).line;
+            }
+            target = target.getNext();
+        }
         System.out.println("No encuentra");
         return null;
     }
@@ -509,9 +516,12 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         Map<Integer, Integer> nodeLinenumberMap = nodoToLinenumber.get(idMetodo);
 
         AbstractInsnNode in = j.next();
+        /*
         while(in.getOpcode() < 0){
             in = in.getNext();
         }
+
+         */
         if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null){
             nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
             indiceNodo++;
