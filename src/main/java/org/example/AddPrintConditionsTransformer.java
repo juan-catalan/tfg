@@ -319,18 +319,10 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 // Si son nodo predicado
                 else if (grafo.outDegreeOf(in) > 0) {
                     insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, nodoToInteger.get(claseYmetodo).get(in)));
-                    LabelNode label = ((JumpInsnNode) in).label;
-                    AbstractInsnNode target = in.getNext();
-                    while (true) {
-                        if (target instanceof LabelNode){
-                            if (((LabelNode) target).equals(label)){
-                                insns.insert(target, addMarkEdge(claseYmetodo, EdgeType.FALSE));
-                                break;
-                            }
-                        }
-                        target = target.getNext();
-                    }
-                    // Añado el camino del false
+                    AbstractInsnNode target = findJumpDestiny((JumpInsnNode) in);
+                    // Añado el camino del true
+                    insns.insert(target, addMarkEdge(claseYmetodo, EdgeType.FALSE));
+                    // Añado el camino del true
                     insns.insert(in, addMarkEdge(claseYmetodo, EdgeType.TRUE));
                 }
                 // Si son nodos de finalizacion
