@@ -201,7 +201,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                                     nodoToLinenumberMap.get(c.nodoFinal))
                                     ;
                         }
-                    ).toList(),
+                    ).sorted(Comparator.comparing((Camino2Edge c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
                     recorridosCaminos.stream().map(c -> {
                         if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
                                 || !nodoToLinenumberMap.containsKey(c.nodoMedio)
@@ -382,12 +382,11 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         //System.out.println("Por normal");
         //System.out.println(findLinenumber(in.getNext()));
         caminoNormalBool = isBranchBooleanAssignment(in.getNext());
-        /*
-        if (caminoSaltoBool && !caminoNormalBool){
-            caminoNormalBool = isBooleanAssignment(findNextPredicateNode(in.getNext()));
+        /* Descomentar para permitir booleanAssignments multiples
+        if (caminoSaltoBool.isPresent() && caminoNormalBool.isEmpty()){
+            return isBooleanAssignment(findNextPredicateNode(in.getNext()));
         }
-
-         */
+        */
         return caminoNormalBool.isPresent() && caminoSaltoBool.isPresent()
                 && caminoNormalBool.get().value() != caminoSaltoBool.get().value()
                 && caminoNormalBool.get().index() == caminoSaltoBool.get().index();

@@ -50,6 +50,7 @@ class FindBooleanAssignmentTest {
         InsnList listaInstrucciones = metodo.get().instructions;
         AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
         transformer.addNodoToIntger(idMetodo);
+        transformer.addNodoLinenumber(idMetodo);
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowGraph(listaInstrucciones, idMetodo);
         DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = transformer.transformGraphToInteger(idMetodo, controlFlowGraph);
         System.out.println("grafo");
