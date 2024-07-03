@@ -4,11 +4,6 @@ import java.awt.*;
 import java.io.*;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.List;
@@ -583,7 +578,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return controlGraph;
     }
 
-    public Set<Camino2Edge> pruebaObtenerCaminos(String idMetodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
+    public Set<Camino2Edge> obtenerSituacionesPrueba(String idMetodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
         Set<Camino2Edge> caminos = new HashSet<>();
         for (AbstractInsnNode i: grafo.vertexSet()){
             if (!grafo.incomingEdgesOf(i).isEmpty() && !grafo.outgoingEdgesOf(i).isEmpty()){
@@ -673,7 +668,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
 
 
-                    Set<Camino2Edge> caminos = pruebaObtenerCaminos(idMetodo, grafo);
+                    Set<Camino2Edge> caminos = obtenerSituacionesPrueba(idMetodo, grafo);
                     //System.out.println("Caminos de profundidad 2: " + caminos.size());
                     if (DEBUG) System.out.println(caminos);
                     almacenCaminos.put(idMetodo ,caminos);

@@ -69,10 +69,10 @@
                                 <i class="fa-solid fa-arrow-right"></i>
                                 <span th:text="${camino.nodoFinal}">NodoFinal</span>
 
-                                <span class="text-success" th:if="${#lists.contains(method.caminosCubiertos, camino)}">
+                                <span class="text-success ms-2" th:if="${#lists.contains(method.caminosCubiertos, camino)}">
                                     <i class="fa-solid fa-check"></i>
                                 </span>
-                                <span class="text-danger" th:if="${!#lists.contains(method.caminosCubiertos, camino)}">
+                                <span class="text-danger ms-2" th:if="${!#lists.contains(method.caminosCubiertos, camino)}">
                                     <i class="fa-solid fa-x"></i>
                                 </span>
                             </li>
