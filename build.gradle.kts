@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("maven-publish")
 }
 
 group = "org.example"
@@ -8,6 +9,29 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("pluginMaven") {
+            groupId = "org.juancatalan"
+            artifactId = "edgepaircoverage"
+            version = "0.9-SNAPSHOT"
+            pom {
+                name = "My Library"
+                description = "A description of my library"
+            }
+            artifact(tasks["shadowJar"])
+            project.shadow.component(this)
+
+        }
+    }
+    repositories {
+        maven {
+            // change to point to your repo, e.g. http://my.org/repo
+            url = uri("http://repo.myorg.com")
+        }
+    }
 }
 
 dependencies {
