@@ -4,7 +4,7 @@ plugins {
     id("maven-publish")
 }
 
-group = "org.example"
+group = "org.juancatalan"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -70,7 +70,7 @@ tasks.shadowJar{
 }
 
 tasks.jar {
-    manifest.attributes["Premain-Class"] = "org.example.AddPrintConditionsAgent"
+    manifest.attributes["Premain-Class"] = "org.juancatalan.edgepaircoverage.AddPrintConditionsAgent"
     manifest.attributes["Can-Redefine-Classes"] = true
     manifest.attributes["Can-Retransform-Classes"] = true
 
