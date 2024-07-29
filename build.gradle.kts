@@ -26,10 +26,15 @@ publishing {
 
         }
     }
+
     repositories {
         maven {
             // change to point to your repo, e.g. http://my.org/repo
-            url = uri("http://repo.myorg.com")
+            url = uri("https://central.sonatype.com:")
+            credentials {
+                username = "EKhmjmBx"
+                password = "tAH8mVcdbJAy8T1o19kSGBLNnr1IjHUy5+6yCW8m40Rl"
+            }
         }
     }
 }
