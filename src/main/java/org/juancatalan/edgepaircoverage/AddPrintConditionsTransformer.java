@@ -36,7 +36,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private AddPrintConditionsTransformer instance;
     static private TemplateEngine templateEngine = new TemplateEngine();
     static private ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-    static private Desktop desktop;
 
     public void addNodoToIntger(String nombre){
         nodoToInteger.put(nombre, new HashMap<>());
@@ -52,7 +51,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             AddPrintConditionsTransformer.imprimirInforme();
             long endTime = System.nanoTime();
             long duration = (endTime - startTime) / 1000000;  // Divide by 1000000 to get milliseconds.
-            System.out.println(duration + " ms to execute the shutdown hook");
+            if (DEBUG) System.out.println(duration + " ms to execute the shutdown hook");
         }
     }
 
@@ -89,7 +88,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         initializeThymeleaf();
         ShutDownHook jvmShutdownHook = new ShutDownHook();
         Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
-        desktop = Desktop.getDesktop();
     }
 
     static public void imprimirCaminos(){
@@ -141,7 +139,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     }
 
     static public void imprimirInforme(){
-        System.out.println("---------------- Ejecucion terminada ----------------");
+        if (DEBUG) System.out.println("---------------- Ejecucion terminada ----------------");
         List<MethodReportDTO> methodReportDTOList = new ArrayList<>();
         for (String metodo: almacenCaminos.keySet()){
             Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
@@ -219,9 +217,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             if (!reportDirectory.exists()) reportDirectory.mkdirs();
             Writer fileWriter = new FileWriter(reportDirectory.getName() + "/report.html");
             templateEngine.process("report", context, fileWriter);
-            if (desktop != null){
-                desktop.open(new File("coverageReport/report.html"));
-            }
         } catch (IOException e) {
             templateEngine.process("report", context, stringWriter);
             System.out.println(stringWriter.toString());
