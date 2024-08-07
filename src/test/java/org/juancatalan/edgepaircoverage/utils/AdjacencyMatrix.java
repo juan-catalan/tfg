@@ -1,4 +1,6 @@
-package org.juancatalan.edgepaircoverage;
+package org.juancatalan.edgepaircoverage.utils;
+
+import org.juancatalan.edgepaircoverage.EdgeType;
 
 import java.util.*;
 
@@ -52,12 +54,6 @@ public class AdjacencyMatrix implements Cloneable {
         adjacencyRow.adjacencies.put(to, setEdges);
     }
 
-    public boolean isPermutation(AdjacencyMatrix other){
-        for(AdjacencyMatrix permutationAdjacencyMatrix: getAllPermutations()){
-            if (permutationAdjacencyMatrix.equals(other)) return true;
-        }
-        return true;
-    }
 
     public boolean isAPermutationOf(AdjacencyMatrix other){
         Set<AdjacencyMatrix> adjacencyMatrixSet = getAllPermutations();

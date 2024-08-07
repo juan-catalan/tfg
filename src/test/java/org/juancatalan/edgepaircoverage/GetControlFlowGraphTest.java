@@ -3,6 +3,7 @@ package org.juancatalan.edgepaircoverage;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.juancatalan.edgepaircoverage.ejerciciosExamen.curso1415.Convocatoria2;
 import org.juancatalan.edgepaircoverage.ejerciciosExamen.curso1819.Convocatoria1;
+import org.juancatalan.edgepaircoverage.utils.AdjacencyMatrix;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
