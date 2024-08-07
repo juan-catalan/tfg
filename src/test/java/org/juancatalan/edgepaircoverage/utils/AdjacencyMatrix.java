@@ -1,5 +1,7 @@
 package org.juancatalan.edgepaircoverage.utils;
 
+import org.jgrapht.graph.DirectedPseudograph;
+import org.juancatalan.edgepaircoverage.BooleanEdge;
 import org.juancatalan.edgepaircoverage.EdgeType;
 
 import java.util.*;
@@ -34,6 +36,20 @@ public class AdjacencyMatrix implements Cloneable {
     }
 
     private Map<Integer, AdjacencyRow> adjacenciesRow = new HashMap<>();
+
+    public static AdjacencyMatrix getAdjacencyMatrixFromGraph(DirectedPseudograph<Integer, BooleanEdge> graph){
+        AdjacencyMatrix adjacencyMatrix = new AdjacencyMatrix();
+        for (Integer vertex: graph.vertexSet()){
+            adjacencyMatrix.addRowByIndex(vertex);
+            for (Integer otherVertex: graph.vertexSet()){
+                Set<BooleanEdge> edges = graph.getAllEdges(vertex, otherVertex);
+                for (BooleanEdge edge: edges){
+                    adjacencyMatrix.addAdjacencyToIndex(vertex, otherVertex, edge.getType());
+                }
+            }
+        }
+        return adjacencyMatrix;
+    }
 
     private void initializeRow(Integer rowIndex){
         if (!adjacenciesRow.containsKey(rowIndex)) adjacenciesRow.put(rowIndex, new AdjacencyRow());

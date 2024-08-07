@@ -240,38 +240,38 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         il.add(new MethodInsnNode(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V"));
     }
 
-    public void addInstructionsConditionsAndBranches(String claseYmetodo, InsnList insns, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
+    public void addInstructionsConditionsAndBranches(String claseYmetodo, InsnList insns, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo, Map<AbstractInsnNode, Integer> abstractInsnNodeToIntegerMap){
         Iterator<AbstractInsnNode> j = insns.iterator();
         while (j.hasNext()) {
             AbstractInsnNode in = j.next();
             if (grafo.containsVertex(in)){
-                if (DEBUG) System.out.println(in + " -> " + controlFlowAnalyser.getNodoToInteger().get(claseYmetodo).get(in));
+                if (DEBUG) System.out.println(in + " -> " + abstractInsnNodeToIntegerMap.get(in));
                 // Si es el nodo inicial
                 if (grafo.inDegreeOf(in) == 0) {
-                    insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, controlFlowAnalyser.getNodoToInteger().get(claseYmetodo).get(in)));
+                    insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, abstractInsnNodeToIntegerMap.get(in)));
 
                     // Añado el camino default
                     insns.insert(in, addMarkEdge(claseYmetodo, EdgeType.DEFAULT));
                 }
                 // Si son nodo predicado
                 else if (grafo.outDegreeOf(in) > 0) {
-                    insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, controlFlowAnalyser.getNodoToInteger().get(claseYmetodo).get(in)));
+                    insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, abstractInsnNodeToIntegerMap.get(in)));
                     AbstractInsnNode target = controlFlowAnalyser.findJumpDestiny((JumpInsnNode) in);
-                    // Añado el camino del true
+                    // Añado el camino del false
                     insns.insert(target, addMarkEdge(claseYmetodo, EdgeType.FALSE));
                     // Añado el camino del true
                     insns.insert(in, addMarkEdge(claseYmetodo, EdgeType.TRUE));
                 }
                 // Si son nodos de finalizacion
                 else {
-                    insns.insertBefore(in, addMarkEndNode(claseYmetodo, controlFlowAnalyser.getNodoToInteger().get(claseYmetodo).get(in)));
+                    insns.insertBefore(in, addMarkEndNode(claseYmetodo, abstractInsnNodeToIntegerMap.get(in)));
                 }
             }
         }
     }
 
 
-    static DirectedPseudograph<Integer, BooleanEdge> transformGraphToInteger(String metodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
+    public static DirectedPseudograph<Integer, BooleanEdge> transformGraphToInteger(String metodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
         DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Map<AbstractInsnNode, Integer> nodeIntegerMap = controlFlowAnalyser.getNodoToInteger().get(metodo);
         for (AbstractInsnNode nodo: grafo.vertexSet()){
@@ -383,7 +383,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
 
                 try{
-                    DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlFlowAnalyser.getControlFlowGraph(insns, idMetodo);
+                    DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlFlowAnalyser.getControlFlowGraph(idMetodo, insns);
                     if (DEBUG) System.out.println(grafo.toString());
                     grafosMetodos.put(idMetodo, transformGraphToInteger(idMetodo, grafo));
                     byte[] output = new byte[graphToDot(idMetodo).getBytes().length];
@@ -404,7 +404,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     almacenCaminos.put(idMetodo ,caminos);
 
 
-                    this.addInstructionsConditionsAndBranches(idMetodo, insns, grafo);
+                    this.addInstructionsConditionsAndBranches(idMetodo, insns, grafo, controlFlowAnalyser.getNodoToInteger().get(idMetodo));
 
 
                 }catch (Exception e){

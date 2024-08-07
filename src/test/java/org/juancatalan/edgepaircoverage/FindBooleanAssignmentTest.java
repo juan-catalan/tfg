@@ -3,6 +3,7 @@ package org.juancatalan.edgepaircoverage;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.juancatalan.edgepaircoverage.ejerciciosExamen.curso1415.Convocatoria2;
 import org.juancatalan.edgepaircoverage.utils.AdjacencyMatrix;
+import org.juancatalan.edgepaircoverage.verifiers.NumVerticesAristasVerifier;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
@@ -20,48 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.objectweb.asm.Opcodes.ASM4;
 
 class FindBooleanAssignmentTest {
-    AdjacencyMatrix getAdjacencyMatrix(DirectedPseudograph<Integer, BooleanEdge> graph){
-        AdjacencyMatrix adjacencyMatrix = new AdjacencyMatrix();
-        for (Integer vertex: graph.vertexSet()){
-            adjacencyMatrix.addRowByIndex(vertex);
-            for (Integer otherVertex: graph.vertexSet()){
-                Set<BooleanEdge> edges = graph.getAllEdges(vertex, otherVertex);
-                for (BooleanEdge edge: edges){
-                    adjacencyMatrix.addAdjacencyToIndex(vertex, otherVertex, edge.getType());
-                }
-            }
-        }
-        return adjacencyMatrix;
-    }
-
-    void verificarNumVerticesAristas(Class clase, String nombreMetodo, int numVertices, int numAristas){
-        String idMetodo = clase.getName().concat(".").concat(nombreMetodo);
-
-        ClassNode cn = new ClassNode(ASM4);
-        ClassReader cr;
-        try {
-            cr = new ClassReader(clase.getName());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        cr.accept(cn, 0);
-        Optional<MethodNode> metodo = cn.methods.stream().filter(m -> m.name.equals(nombreMetodo)).findFirst();
-
-        assertFalse(metodo.isEmpty());
-
-        InsnList listaInstrucciones = metodo.get().instructions;
-        AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
-        transformer.addNodoToIntger(idMetodo);
-        transformer.addNodoLinenumber(idMetodo);
-        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowAnalyser().getControlFlowGraph(listaInstrucciones, idMetodo);
-        DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = transformer.transformGraphToInteger(idMetodo, controlFlowGraph);
-        System.out.println("grafo");
-        System.out.println(controlFlowGraphInt);
-
-        assertEquals(numVertices, controlFlowGraphInt.vertexSet().size());
-        assertEquals(numAristas, controlFlowGraphInt.edgeSet().size());
-    }
-
     @Coverage2Edge
     private void pruebaAsignacionBooleanaSimple(int i){
         boolean multiplo2 = i%2 == 0;
@@ -119,32 +78,32 @@ class FindBooleanAssignmentTest {
 
     @Test
     void testFindBooleanAssignmentTest() throws NoSuchMethodException {
-        verificarNumVerticesAristas(Convocatoria2.class, "imagen", 6, 7);
+        NumVerticesAristasVerifier.verify(Convocatoria2.class, "imagen", 6, 7);
     }
 
     @Test
     void testAsignacionBooleanaSimple() throws NoSuchMethodException {
-        verificarNumVerticesAristas(this.getClass(), "pruebaAsignacionBooleanaSimple", 3, 3);
+        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaSimple", 3, 3);
     }
 
     @Test
     void testAsignacionBooleanaConAnd() throws NoSuchMethodException {
-        verificarNumVerticesAristas(this.getClass(), "pruebaAsignacionBooleanaConAnd", 3, 3);
+        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaConAnd", 3, 3);
     }
 
     @Test
     void testAsignacionBooleanaConOr() throws NoSuchMethodException {
-        verificarNumVerticesAristas(this.getClass(), "pruebaAsignacionBooleanaConOr", 3, 3);
+        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaConOr", 3, 3);
     }
 
     @Test
     void testAsignacionBooleanaConTripleOr() throws NoSuchMethodException {
-        verificarNumVerticesAristas(this.getClass(), "pruebaAsignacionBooleanaConTripleOr", 3, 3);
+        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaConTripleOr", 3, 3);
     }
 
     @Disabled("Aun no funciona para combinacion de puertas logicas")
     @Test
     void testAsignacionBooleanaCombinada() throws NoSuchMethodException {
-        verificarNumVerticesAristas(this.getClass(), "pruebaAsignacionBooleanaCombinandoOrAnd", 3, 3);
+        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaCombinandoOrAnd", 3, 3);
     }
 }

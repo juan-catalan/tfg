@@ -12,13 +12,9 @@ import static org.objectweb.asm.Opcodes.*;
 import static org.objectweb.asm.Opcodes.IFNONNULL;
 
 public class ControlFlowAnalyser {
-    private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
-    private Map<String, Map<Integer, Integer>> nodoToLinenumber;
+    private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger = new HashMap<>();
+    private Map<String, Map<Integer, Integer>> nodoToLinenumber = new HashMap<>();
 
-    ControlFlowAnalyser(){
-        if (nodoToInteger == null) nodoToInteger = new HashMap<>();
-        if (nodoToLinenumber == null) nodoToLinenumber = new HashMap<>();
-    }
 
     public Map<String, Map<AbstractInsnNode, Integer>> getNodoToInteger() {
         return nodoToInteger;
@@ -28,7 +24,7 @@ public class ControlFlowAnalyser {
         return nodoToLinenumber;
     }
 
-    public boolean isPredicateNode(AbstractInsnNode in){
+    private boolean isPredicateNode(AbstractInsnNode in){
         int opCode = in.getOpcode();
         return ((opCode >= IFEQ && opCode <= IF_ACMPNE) ||
                 (opCode >= IRETURN && opCode <= RETURN) ||
@@ -36,7 +32,7 @@ public class ControlFlowAnalyser {
                 (opCode == ATHROW));
     }
 
-    public Optional<BooleanAssignmentInfo> isBranchBooleanAssignment(AbstractInsnNode in){
+    private Optional<BooleanAssignmentInfo> isBranchBooleanAssignment(AbstractInsnNode in){
         AbstractInsnNode auxNode = in;
         boolean value;
         // Paso del bytecode auxiliar
@@ -66,7 +62,7 @@ public class ControlFlowAnalyser {
         else return Optional.empty();
     }
 
-    public boolean isBooleanAssignment(AbstractInsnNode in){
+    private boolean isBooleanAssignment(AbstractInsnNode in){
         if (!(in instanceof JumpInsnNode)) return false;
         Optional<BooleanAssignmentInfo> caminoSaltoBool, caminoNormalBool;
         //System.out.println("Checkeando boolean assignment");
@@ -129,7 +125,7 @@ public class ControlFlowAnalyser {
         return destiny;
     }
 
-    public AbstractInsnNode findNextPredicateNode(AbstractInsnNode in){
+    private AbstractInsnNode findNextPredicateNode(AbstractInsnNode in){
         AbstractInsnNode target = in;
         while (target != null){
             int opTarget = target.getOpcode();
@@ -150,7 +146,7 @@ public class ControlFlowAnalyser {
         return null;
     }
 
-    public Integer findLinenumber(AbstractInsnNode in){
+    private Integer findLinenumber(AbstractInsnNode in){
         AbstractInsnNode target = in.getPrevious();
         while (target != null){
             if (target instanceof LineNumberNode){
@@ -169,7 +165,7 @@ public class ControlFlowAnalyser {
         return null;
     }
 
-    DirectedPseudograph<AbstractInsnNode, BooleanEdge> getControlFlowGraph(InsnList insns, String idMetodo){
+    public DirectedPseudograph<AbstractInsnNode, BooleanEdge> getControlFlowGraph(String idMetodo, InsnList insns){
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Iterator<AbstractInsnNode> j = insns.iterator();
         Integer indiceNodo = 1;
