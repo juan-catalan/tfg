@@ -53,7 +53,7 @@ class FindBooleanAssignmentTest {
         AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
         transformer.addNodoToIntger(idMetodo);
         transformer.addNodoLinenumber(idMetodo);
-        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowGraph(listaInstrucciones, idMetodo);
+        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowAnalyser().getControlFlowGraph(listaInstrucciones, idMetodo);
         DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = transformer.transformGraphToInteger(idMetodo, controlFlowGraph);
         System.out.println("grafo");
         System.out.println(controlFlowGraphInt);

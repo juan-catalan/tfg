@@ -39,7 +39,7 @@ class ObtenerSituacionesPruebaTest {
         AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
         transformer.addNodoToIntger(idMetodo);
         transformer.addNodoLinenumber(idMetodo);
-        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowGraph(listaInstrucciones, idMetodo);
+        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowAnalyser().getControlFlowGraph(listaInstrucciones, idMetodo);
         Set<Camino2Edge> situacionesPrueba = transformer.obtenerSituacionesPrueba(idMetodo, controlFlowGraph);
 
 

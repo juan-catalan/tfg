@@ -29,20 +29,19 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private Map<String, String> grafosRenderedMetodos;
     static private Map<String, Integer> caminosImposiblesMetodo;
     static private Map<String, Set<Camino2Edge>> almacenCaminos;
-    static private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
-    static private Map<String, Map<Integer, Integer>> nodoToLinenumber;
     static private Map<String, Set<Camino2Edge>> caminosRecorridos;
     static private Map<String, Camino2Edge> caminoActual;
     static private AddPrintConditionsTransformer instance;
     static private TemplateEngine templateEngine = new TemplateEngine();
     static private ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+    static private ControlFlowAnalyser controlFlowAnalyser = new ControlFlowAnalyser();
 
     public void addNodoToIntger(String nombre){
-        nodoToInteger.put(nombre, new HashMap<>());
+        controlFlowAnalyser.getNodoToInteger().put(nombre, new HashMap<>());
     }
 
     public void addNodoLinenumber(String nombre){
-        nodoToLinenumber.put(nombre, new HashMap<>());
+        controlFlowAnalyser.getNodoToLinenumber().put(nombre, new HashMap<>());
     }
 
     private static class ShutDownHook extends Thread {
@@ -78,8 +77,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         DEBUG = debug;
         if (DEBUG) System.out.println("Prueba constructor");
         if (almacenCaminos == null) almacenCaminos = new HashMap<>();
-        if (nodoToInteger == null) nodoToInteger = new HashMap<>();
-        if (nodoToLinenumber == null) nodoToLinenumber = new HashMap<>();
         if (caminosRecorridos == null) caminosRecorridos = new HashMap<>();
         if (caminoActual == null) caminoActual = new HashMap<>();
         if (grafosMetodos == null) grafosMetodos = new HashMap<>();
@@ -119,7 +116,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     static String graphToDot(String metodo){
         DOTExporter<Integer, BooleanEdge> exporter = new DOTExporter<>();
-        Map<Integer, Integer> nodoToLinenumberMap = nodoToLinenumber.get(metodo);
+        Map<Integer, Integer> nodoToLinenumberMap = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
         //nodoToLinenumberMap.getOrDefault(v, v);
         exporter.setVertexAttributeProvider((v) -> {
             Map<String, Attribute> map = new LinkedHashMap<>();
@@ -145,7 +142,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         for (String metodo: almacenCaminos.keySet()){
             Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
             Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
-            Map<Integer, Integer> nodoToLinenumberMap  = nodoToLinenumber.get(metodo);
+            Map<Integer, Integer> nodoToLinenumberMap  = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
             /*
             System.out.println("Clase y metodo: " + metodo);
             System.out.println("\tGrafo: " + grafosMetodos.get(metodo));
@@ -299,18 +296,18 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         while (j.hasNext()) {
             AbstractInsnNode in = j.next();
             if (grafo.containsVertex(in)){
-                if (DEBUG) System.out.println(in + " -> " + nodoToInteger.get(claseYmetodo).get(in));
+                if (DEBUG) System.out.println(in + " -> " + controlFlowAnalyser.getNodoToInteger().get(claseYmetodo).get(in));
                 // Si es el nodo inicial
                 if (grafo.inDegreeOf(in) == 0) {
-                    insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, nodoToInteger.get(claseYmetodo).get(in)));
+                    insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, controlFlowAnalyser.getNodoToInteger().get(claseYmetodo).get(in)));
 
                     // Añado el camino default
                     insns.insert(in, addMarkEdge(claseYmetodo, EdgeType.DEFAULT));
                 }
                 // Si son nodo predicado
                 else if (grafo.outDegreeOf(in) > 0) {
-                    insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, nodoToInteger.get(claseYmetodo).get(in)));
-                    AbstractInsnNode target = findJumpDestiny((JumpInsnNode) in);
+                    insns.insertBefore(in, addMarkPredicateNode(claseYmetodo, controlFlowAnalyser.getNodoToInteger().get(claseYmetodo).get(in)));
+                    AbstractInsnNode target = controlFlowAnalyser.findJumpDestiny((JumpInsnNode) in);
                     // Añado el camino del true
                     insns.insert(target, addMarkEdge(claseYmetodo, EdgeType.FALSE));
                     // Añado el camino del true
@@ -318,74 +315,16 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
                 // Si son nodos de finalizacion
                 else {
-                    insns.insertBefore(in, addMarkEndNode(claseYmetodo, nodoToInteger.get(claseYmetodo).get(in)));
+                    insns.insertBefore(in, addMarkEndNode(claseYmetodo, controlFlowAnalyser.getNodoToInteger().get(claseYmetodo).get(in)));
                 }
             }
         }
     }
 
-    public boolean isPredicateNode(AbstractInsnNode in){
-        int opCode = in.getOpcode();
-        return ((opCode >= IFEQ && opCode <= IF_ACMPNE) ||
-                (opCode >= IRETURN && opCode <= RETURN) ||
-                (opCode >= IFNULL && opCode <= IFNONNULL) ||
-                (opCode == ATHROW));
-    }
-
-    public Optional<BooleanAssignmentInfo> isBranchBooleanAssignment(AbstractInsnNode in){
-        AbstractInsnNode auxNode = in;
-        boolean value;
-        // Paso del bytecode auxiliar
-        while (auxNode.getOpcode() < 0){
-            auxNode = auxNode.getNext();
-        }
-        if (auxNode.getOpcode() == ICONST_0) value = false;
-        else if (auxNode.getOpcode() == ICONST_1) value = true;
-        else return Optional.empty();
-        //System.out.println("ICONST");
-        auxNode = auxNode.getNext();
-        // Paso del bytecode auxiliar
-        while (auxNode.getOpcode() < 0){
-            auxNode = auxNode.getNext();
-        }
-        if (auxNode.getOpcode() == GOTO) {
-            auxNode = findJumpDestiny((JumpInsnNode) auxNode);
-            //System.out.println("GOTO");
-        }
-        while (auxNode.getOpcode() < 0){
-            auxNode = auxNode.getNext();
-        }
-        if (auxNode.getOpcode() == ISTORE) {
-            int index = ((VarInsnNode) auxNode).var;
-            return Optional.of(new BooleanAssignmentInfo(value, index));
-        }
-        else return Optional.empty();
-    }
-
-    public boolean isBooleanAssignment(AbstractInsnNode in){
-        if (!(in instanceof JumpInsnNode)) return false;
-        Optional<BooleanAssignmentInfo> caminoSaltoBool, caminoNormalBool;
-        //System.out.println("Checkeando boolean assignment");
-        AbstractInsnNode auxNode = findJumpDestiny((JumpInsnNode) in);
-        //System.out.println("Por salto");
-        //System.out.println(findLinenumber(in));
-        caminoSaltoBool = isBranchBooleanAssignment(auxNode);
-        //System.out.println("Por normal");
-        //System.out.println(findLinenumber(in.getNext()));
-        caminoNormalBool = isBranchBooleanAssignment(in.getNext());
-        /* Descomentar para permitir booleanAssignments multiples
-        if (caminoSaltoBool.isPresent() && caminoNormalBool.isEmpty()){
-            return isBooleanAssignment(findNextPredicateNode(in.getNext()));
-        }
-        */
-        return caminoNormalBool.isPresent() && caminoSaltoBool.isPresent()
-                && caminoNormalBool.get().value() != caminoSaltoBool.get().value()
-                && caminoNormalBool.get().index() == caminoSaltoBool.get().index();
-    }
 
     static DirectedPseudograph<Integer, BooleanEdge> transformGraphToInteger(String metodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
         DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
-        Map<AbstractInsnNode, Integer> nodeIntegerMap = nodoToInteger.get(metodo);
+        Map<AbstractInsnNode, Integer> nodeIntegerMap = controlFlowAnalyser.getNodoToInteger().get(metodo);
         for (AbstractInsnNode nodo: grafo.vertexSet()){
             newGraph.addVertex(nodeIntegerMap.get(nodo));
         }
@@ -399,7 +338,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     static DirectedPseudograph<Integer, BooleanEdge> transformGraphFromIntegerToLinenumber(String metodo, DirectedPseudograph<Integer, BooleanEdge> grafo){
         DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
-        Map<Integer, Integer> integerLinenumberMap = nodoToLinenumber.get(metodo);
+        Map<Integer, Integer> integerLinenumberMap = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
         Map<Integer, Integer> numNodosPorLinea = new HashMap<>();
         for (Integer nodo: grafo.vertexSet()){
             // Si existe
@@ -416,162 +355,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return newGraph;
     }
 
-    public AbstractInsnNode findJumpDestiny(JumpInsnNode in){
-        LabelNode target = in.label;
-
-        AbstractInsnNode nextNode = in.getNext();
-        while (nextNode != null){
-            if ((nextNode instanceof LabelNode) &&
-                    target.equals(nextNode)
-            ){
-                // Avanzo si es bytecode auxiliar
-                //while (nextNode.getOpcode() < 0) nextNode = nextNode.getNext();
-                return nextNode;
-            }
-            nextNode = nextNode.getNext();
-        }
-
-        AbstractInsnNode previousNode = in.getPrevious();
-        while (previousNode != null){
-            if ((previousNode instanceof LabelNode) &&
-                    target.equals(previousNode)
-            ){
-                return previousNode;
-            }
-            previousNode = previousNode.getPrevious();
-        }
-
-        return null;
-    }
-
-    public AbstractInsnNode findGotoDestiny(JumpInsnNode in){
-        AbstractInsnNode destiny = findJumpDestiny(in);
-        if (destiny != null) {
-            // Busco que sea nodo predicado
-            while (!isPredicateNode(destiny)){
-                if (destiny.getOpcode() == GOTO){
-                    return findGotoDestiny((JumpInsnNode) destiny);
-                }
-                destiny = destiny.getNext();
-            }
-        }
-        return destiny;
-    }
-
-    public AbstractInsnNode findNextPredicateNode(AbstractInsnNode in){
-        AbstractInsnNode target = in;
-        while (target != null){
-            int opTarget = target.getOpcode();
-            // Si es un goto cuidado revisar
-            if (opTarget == GOTO){
-                AbstractInsnNode destiny = this.findGotoDestiny((JumpInsnNode) target);
-                if (destiny != null){
-                    return destiny;
-                }
-            }
-            // Si no lo es comprobar si estamos en un nodo predicado o de fin
-            if (isPredicateNode(target)
-            ) {
-                return target;
-            }
-            target = target.getNext();
-        }
-        return null;
-    }
-
-    public Integer findLinenumber(AbstractInsnNode in){
-        AbstractInsnNode target = in.getPrevious();
-        while (target != null){
-            if (target instanceof LineNumberNode){
-                return ((LineNumberNode) target).line;
-            }
-            target = target.getPrevious();
-        }
-        target = in.getNext();
-        while (target != null){
-            if (target instanceof LineNumberNode){
-                return ((LineNumberNode) target).line;
-            }
-            target = target.getNext();
-        }
-        System.out.println("No encuentra");
-        return null;
-    }
-
-    DirectedPseudograph<AbstractInsnNode, BooleanEdge> getControlFlowGraph(InsnList insns, String idMetodo){
-        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlGraph = new DirectedPseudograph<>(BooleanEdge.class);
-        Iterator<AbstractInsnNode> j = insns.iterator();
-        Integer indiceNodo = 1;
-        Map<AbstractInsnNode, Integer> nodeIntegerMap = nodoToInteger.get(idMetodo);
-        Map<Integer, Integer> nodeLinenumberMap = nodoToLinenumber.get(idMetodo);
-
-        AbstractInsnNode in = j.next();
-        /*
-        while(in.getOpcode() < 0){
-            in = in.getNext();
-        }
-
-         */
-        if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null){
-            nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
-            indiceNodo++;
-        }
-        controlGraph.addVertex(in);
-        AbstractInsnNode nextPredicate;
-        nextPredicate = findNextPredicateNode(in);
-        while (isBooleanAssignment(nextPredicate)){
-            nextPredicate = findNextPredicateNode(nextPredicate.getNext());
-        }
-        if (nextPredicate != null){
-            if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null){
-                nodeLinenumberMap.put(indiceNodo, findLinenumber(nextPredicate));
-                indiceNodo++;
-            }
-            controlGraph.addVertex(nextPredicate);
-            controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.DEFAULT));
-        }
-        while (j.hasNext()) {
-            in = j.next();
-            int op = in.getOpcode();
-            if (op >= IFEQ && op <= IF_ACMPNE || op >= IFNULL && op <= IFNONNULL) {
-                if (isBooleanAssignment(in)){
-                    System.out.println("Asignación booleana");
-                    continue;
-                }
-                if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) {
-                    nodeLinenumberMap.put(indiceNodo, findLinenumber(in));
-                    indiceNodo++;
-                }
-                controlGraph.addVertex(in);
-                // Busco el label de salto (donde va el programa si se evalua true)
-                if (in instanceof JumpInsnNode){
-                    AbstractInsnNode target = findJumpDestiny((JumpInsnNode) in);
-                    nextPredicate = findNextPredicateNode(target);
-                    while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
-                    if (nextPredicate != null){
-                        if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
-                            nodeLinenumberMap.put(indiceNodo, findLinenumber(nextPredicate));
-                            indiceNodo++;
-                        }
-                        controlGraph.addVertex(nextPredicate);
-                        controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.FALSE));
-                    }
-                }
-                // Busco el siguiente nodo predicado por el camino FALSE
-                nextPredicate = findNextPredicateNode(in.getNext());
-                while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
-                if (nextPredicate != null){
-                    if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
-                        nodeLinenumberMap.put(indiceNodo, findLinenumber(nextPredicate));
-                        indiceNodo++;
-                    }
-                    controlGraph.addVertex(nextPredicate);
-                    controlGraph.addEdge(in, nextPredicate, new BooleanEdge(EdgeType.TRUE));
-                }
-            }
-        }
-        if (DEBUG) System.out.println(nodeIntegerMap);
-        return controlGraph;
+    public ControlFlowAnalyser getControlFlowAnalyser(){
+        return controlFlowAnalyser;
     }
 
     public Set<Camino2Edge> obtenerSituacionesPrueba(String idMetodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
@@ -580,9 +365,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             if (!grafo.incomingEdgesOf(i).isEmpty() && !grafo.outgoingEdgesOf(i).isEmpty()){
                 for (BooleanEdge edgeIn: grafo.incomingEdgesOf(i)){
                     for (BooleanEdge edgeOut: grafo.outgoingEdgesOf(i)){
-                        Integer nodoInicio = nodoToInteger.get(idMetodo).get(grafo.getEdgeSource(edgeIn));
-                        Integer nodoMedio = nodoToInteger.get(idMetodo).get(grafo.getEdgeTarget(edgeIn));
-                        Integer nodoFinal = nodoToInteger.get(idMetodo).get(grafo.getEdgeTarget(edgeOut));
+                        Integer nodoInicio = controlFlowAnalyser.getNodoToInteger().get(idMetodo).get(grafo.getEdgeSource(edgeIn));
+                        Integer nodoMedio = controlFlowAnalyser.getNodoToInteger().get(idMetodo).get(grafo.getEdgeTarget(edgeIn));
+                        Integer nodoFinal = controlFlowAnalyser.getNodoToInteger().get(idMetodo).get(grafo.getEdgeTarget(edgeOut));
 
                         Camino2Edge camino = new Camino2Edge(nodoInicio, edgeIn.getType(), nodoMedio,
                                 edgeOut.getType(), nodoFinal);
@@ -634,8 +419,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
             }
             if (isAnnotated) {
-                nodoToInteger.put(idMetodo, new HashMap<>());
-                nodoToLinenumber.put(idMetodo, new HashMap<>());
+                controlFlowAnalyser.getNodoToInteger().put(idMetodo, new HashMap<>());
+                controlFlowAnalyser.getNodoToLinenumber().put(idMetodo, new HashMap<>());
                 caminosRecorridos.put(idMetodo, new HashSet<>());
                 caminoActual.put(idMetodo, new Camino2Edge(null, null, null, null, null));
                 if (DEBUG) System.out.println("I'm transforming my own classes: ".concat(className));
@@ -649,7 +434,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
 
                 try{
-                    DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = this.getControlFlowGraph(insns, idMetodo);
+                    DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlFlowAnalyser.getControlFlowGraph(insns, idMetodo);
                     if (DEBUG) System.out.println(grafo.toString());
                     grafosMetodos.put(idMetodo, transformGraphToInteger(idMetodo, grafo));
                     byte[] output = new byte[graphToDot(idMetodo).getBytes().length];
