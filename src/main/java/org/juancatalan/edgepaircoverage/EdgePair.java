@@ -3,11 +3,11 @@ package org.juancatalan.edgepaircoverage;
 
 import java.util.Objects;
 
-public class Camino2Edge {
+public class EdgePair {
     public Integer nodoInicio, nodoMedio, nodoFinal;
     public EdgeType aristaInicioMedio, aristaMedioFinal;
 
-    public Camino2Edge(Integer nodoIni, EdgeType aristaIniMedio, Integer nodoMedio, EdgeType aristaMedioFin, Integer nodoFinal){
+    public EdgePair(Integer nodoIni, EdgeType aristaIniMedio, Integer nodoMedio, EdgeType aristaMedioFin, Integer nodoFinal){
         this.nodoInicio = nodoIni;
         this.nodoMedio  = nodoMedio;
         this.nodoFinal = nodoFinal;
@@ -21,8 +21,8 @@ public class Camino2Edge {
                 aristaInicioMedio != null && aristaMedioFinal != null;
     }
 
-    public Camino2Edge nextHalf (){
-        return new Camino2Edge(nodoMedio, aristaMedioFinal, nodoFinal, null, null);
+    public EdgePair nextHalf (){
+        return new EdgePair(nodoMedio, aristaMedioFinal, nodoFinal, null, null);
     }
 
     public void addNode(Integer node){
@@ -40,8 +40,8 @@ public class Camino2Edge {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Camino2Edge camino2Edge = (Camino2Edge) o;
-        return Objects.equals(nodoInicio, camino2Edge.nodoInicio) && Objects.equals(nodoMedio, camino2Edge.nodoMedio) && Objects.equals(nodoFinal, camino2Edge.nodoFinal) && Objects.equals(aristaInicioMedio, camino2Edge.aristaInicioMedio) && Objects.equals(aristaMedioFinal, camino2Edge.aristaMedioFinal);
+        EdgePair edgePair = (EdgePair) o;
+        return Objects.equals(nodoInicio, edgePair.nodoInicio) && Objects.equals(nodoMedio, edgePair.nodoMedio) && Objects.equals(nodoFinal, edgePair.nodoFinal) && Objects.equals(aristaInicioMedio, edgePair.aristaInicioMedio) && Objects.equals(aristaMedioFinal, edgePair.aristaMedioFinal);
     }
 
     @Override

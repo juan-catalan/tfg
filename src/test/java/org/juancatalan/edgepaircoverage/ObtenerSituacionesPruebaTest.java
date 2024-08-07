@@ -40,7 +40,7 @@ class ObtenerSituacionesPruebaTest {
         transformer.addNodoToIntger(idMetodo);
         transformer.addNodoLinenumber(idMetodo);
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowAnalyser().getControlFlowGraph(listaInstrucciones, idMetodo);
-        Set<Camino2Edge> situacionesPrueba = transformer.obtenerSituacionesPrueba(idMetodo, controlFlowGraph);
+        Set<EdgePair> situacionesPrueba = transformer.obtenerSituacionesPrueba(idMetodo, controlFlowGraph);
 
 
         assertEquals(numSituacionesPrueba, situacionesPrueba.size());

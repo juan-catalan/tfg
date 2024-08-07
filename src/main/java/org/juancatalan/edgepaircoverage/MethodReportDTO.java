@@ -7,11 +7,11 @@ public class MethodReportDTO {
     public String grafo;
     public String grafoImagen;
     public Integer caminosImposibles;
-    public List<Camino2Edge> caminos;
-    public List<Camino2Edge> caminosCubiertos;
+    public List<EdgePair> caminos;
+    public List<EdgePair> caminosCubiertos;
     public Double porcentajeCobertura;
 
-    public MethodReportDTO(String nombre, String grafo, String grafoImagen, Integer caminosImposibles, List<Camino2Edge> caminos, List<Camino2Edge> caminosCubiertos, Double porcentajeCobertura) {
+    public MethodReportDTO(String nombre, String grafo, String grafoImagen, Integer caminosImposibles, List<EdgePair> caminos, List<EdgePair> caminosCubiertos, Double porcentajeCobertura) {
         this.nombre = nombre;
         this.grafo = grafo;
         this.grafoImagen = grafoImagen;

@@ -1,6 +1,5 @@
 package org.juancatalan.edgepaircoverage;
 
-import java.awt.*;
 import java.io.*;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
@@ -28,9 +27,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private Map<String, DirectedPseudograph<Integer, BooleanEdge>> grafosMetodos;
     static private Map<String, String> grafosRenderedMetodos;
     static private Map<String, Integer> caminosImposiblesMetodo;
-    static private Map<String, Set<Camino2Edge>> almacenCaminos;
-    static private Map<String, Set<Camino2Edge>> caminosRecorridos;
-    static private Map<String, Camino2Edge> caminoActual;
+    static private Map<String, Set<EdgePair>> almacenCaminos;
+    static private Map<String, Set<EdgePair>> caminosRecorridos;
+    static private Map<String, EdgePair> caminoActual;
     static private AddPrintConditionsTransformer instance;
     static private TemplateEngine templateEngine = new TemplateEngine();
     static private ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
@@ -87,25 +86,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
     }
 
-    static public void imprimirCaminos(){
-        almacenCaminos.forEach((metodo, caminos) -> {
-            System.out.println("Clase y metodo: " + metodo);
-            System.out.println("\tNumero de caminos: " + caminos.size());
-            System.out.println("\tCaminos:");
-            for (Camino2Edge camino: caminos){
-                System.out.println("\t\t" + camino);
-            }
-        });
-    }
-
-    static public void imprimirCaminosRecorridos(){
-        caminosRecorridos.forEach((metodo, caminos) -> {
-            System.out.println("Clase y metodo: " + metodo);
-            System.out.println("\tCaminos recorridos: " + caminos.size());
-            System.out.println("\t\t" + Arrays.toString(caminos.toArray()));
-        });
-    }
-
     static int numeroCaminosTotal(String descriptorMetodo){
         return almacenCaminos.get(descriptorMetodo).size();
     }
@@ -140,40 +120,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         if (DEBUG) System.out.println("---------------- Ejecucion terminada ----------------");
         List<MethodReportDTO> methodReportDTOList = new ArrayList<>();
         for (String metodo: almacenCaminos.keySet()){
-            Set<Camino2Edge> todosCaminos = almacenCaminos.get(metodo);
-            Set<Camino2Edge> recorridosCaminos = caminosRecorridos.get(metodo);
+            Set<EdgePair> todosCaminos = almacenCaminos.get(metodo);
+            Set<EdgePair> recorridosCaminos = caminosRecorridos.get(metodo);
             Map<Integer, Integer> nodoToLinenumberMap  = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
-            /*
-            System.out.println("Clase y metodo: " + metodo);
-            System.out.println("\tGrafo: " + grafosMetodos.get(metodo));
-            System.out.println("\tNumero de caminos total: " + todosCaminos.size());
-            System.out.println("\t\tCaminos: [");
-            if (DEBUG){
-                String[] prueba = todosCaminos.stream().map(camino2Edge -> camino2Edge.toString()).toArray(String[]::new);
-                Arrays.sort(prueba);
-                for (int i=0; i<prueba.length; i++){
-                    System.out.println("\t\t\t" + prueba[i]);
-                }
-            }
-            else {
-                todosCaminos.forEach((camino -> {
-                    System.out.println("\t\t\t" + camino);
-                }));
-            }
-            System.out.println("\t\t]");
-            System.out.println("\tNumero de caminos cubiertos: " + recorridosCaminos.size());
-            System.out.println("\t\tCaminos: [");
-            recorridosCaminos.forEach((camino -> {
-                System.out.println("\t\t\t" + camino);
-            }));
-            System.out.println("\t\t]");
-            System.out.println("\tNumero de caminos sin cubrir: " + (todosCaminos.size()-recorridosCaminos.size()));
-            System.out.println("\t\tCaminos: [");
-            todosCaminos.forEach((camino -> {
-                if (!recorridosCaminos.contains(camino)) System.out.println("\t\t\t" + camino);
-            }));
-            System.out.println("\t\t]");
-             */
             MethodReportDTO methodReportDTO = new MethodReportDTO(metodo,
                     graphToDot(metodo),
                     grafosRenderedMetodos.get(metodo),
@@ -184,7 +133,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                                 || !nodoToLinenumberMap.containsKey(c.nodoFinal))
                             return c;
                         else
-                            return new Camino2Edge(
+                            return new EdgePair(
                                     nodoToLinenumberMap.get(c.nodoInicio),
                                     c.aristaInicioMedio,
                                     nodoToLinenumberMap.get(c.nodoMedio),
@@ -192,7 +141,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                                     nodoToLinenumberMap.get(c.nodoFinal))
                                     ;
                         }
-                    ).sorted(Comparator.comparing((Camino2Edge c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
+                    ).sorted(Comparator.comparing((EdgePair c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
                     recorridosCaminos.stream().map(c -> {
                         if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
                                 || !nodoToLinenumberMap.containsKey(c.nodoMedio)
@@ -200,7 +149,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                             return c;
                         }
                         else {
-                            return new Camino2Edge(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal));
+                            return new EdgePair(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal));
                         }
                     }).toList(),
                     (100.0D * (recorridosCaminos.size()) / (todosCaminos.size() - caminosImposiblesMetodo.get(metodo)))
@@ -225,7 +174,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     // TODO: mover a otra clase
     static public void markPredicateNode(String metodo, int nodeId) {
-        Camino2Edge camino = caminoActual.get(metodo);
+        EdgePair camino = caminoActual.get(metodo);
         camino.addNode(nodeId);
         if (camino.isComplete()){
             caminosRecorridos.get(metodo).add(camino);
@@ -238,17 +187,17 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     }
 
     static public void markEndNode(String metodo, int nodeId) {
-        Camino2Edge camino = caminoActual.get(metodo);
+        EdgePair camino = caminoActual.get(metodo);
         camino.addNode(nodeId);
         if (camino.isComplete()){
             caminosRecorridos.get(metodo).add(camino);
         }
-        caminoActual.put(metodo, new Camino2Edge(null,  null, null,  null, null));
+        caminoActual.put(metodo, new EdgePair(null,  null, null,  null, null));
         // System.out.print(nodeId);
     }
 
     static public void markEdge(String metodo, String edge) {
-        Camino2Edge camino = caminoActual.get(metodo);
+        EdgePair camino = caminoActual.get(metodo);
         camino.addEdge(EdgeType.valueOf(edge));
         if (camino.isComplete()){
             caminosRecorridos.get(metodo).add(camino);
@@ -359,8 +308,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return controlFlowAnalyser;
     }
 
-    public Set<Camino2Edge> obtenerSituacionesPrueba(String idMetodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
-        Set<Camino2Edge> caminos = new HashSet<>();
+    public Set<EdgePair> obtenerSituacionesPrueba(String idMetodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
+        Set<EdgePair> caminos = new HashSet<>();
         for (AbstractInsnNode i: grafo.vertexSet()){
             if (!grafo.incomingEdgesOf(i).isEmpty() && !grafo.outgoingEdgesOf(i).isEmpty()){
                 for (BooleanEdge edgeIn: grafo.incomingEdgesOf(i)){
@@ -369,7 +318,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                         Integer nodoMedio = controlFlowAnalyser.getNodoToInteger().get(idMetodo).get(grafo.getEdgeTarget(edgeIn));
                         Integer nodoFinal = controlFlowAnalyser.getNodoToInteger().get(idMetodo).get(grafo.getEdgeTarget(edgeOut));
 
-                        Camino2Edge camino = new Camino2Edge(nodoInicio, edgeIn.getType(), nodoMedio,
+                        EdgePair camino = new EdgePair(nodoInicio, edgeIn.getType(), nodoMedio,
                                 edgeOut.getType(), nodoFinal);
                         caminos.add(camino);
                     }
@@ -422,7 +371,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 controlFlowAnalyser.getNodoToInteger().put(idMetodo, new HashMap<>());
                 controlFlowAnalyser.getNodoToLinenumber().put(idMetodo, new HashMap<>());
                 caminosRecorridos.put(idMetodo, new HashSet<>());
-                caminoActual.put(idMetodo, new Camino2Edge(null, null, null, null, null));
+                caminoActual.put(idMetodo, new EdgePair(null, null, null, null, null));
                 if (DEBUG) System.out.println("I'm transforming my own classes: ".concat(className));
                 if (DEBUG) System.out.println("I'm transforming the method: ".concat(mn.name));
                 if ("<init>".equals(mn.name) || "<clinit>".equals(mn.name)) {
@@ -449,7 +398,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
 
 
-                    Set<Camino2Edge> caminos = obtenerSituacionesPrueba(idMetodo, grafo);
+                    Set<EdgePair> caminos = obtenerSituacionesPrueba(idMetodo, grafo);
                     //System.out.println("Caminos de profundidad 2: " + caminos.size());
                     if (DEBUG) System.out.println(caminos);
                     almacenCaminos.put(idMetodo ,caminos);
@@ -474,6 +423,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     // Not implemented
     @Override
     public byte[] transform(Module module, ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
-        return ClassFileTransformer.super.transform(module, loader, className, classBeingRedefined, protectionDomain, classfileBuffer);
+        return this.transform(loader, className, classBeingRedefined, protectionDomain, classfileBuffer);
     }
 }

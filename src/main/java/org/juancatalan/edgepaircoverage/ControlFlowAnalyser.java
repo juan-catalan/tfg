@@ -12,19 +12,19 @@ import static org.objectweb.asm.Opcodes.*;
 import static org.objectweb.asm.Opcodes.IFNONNULL;
 
 public class ControlFlowAnalyser {
-    static private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
-    static private Map<String, Map<Integer, Integer>> nodoToLinenumber;
+    private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger;
+    private Map<String, Map<Integer, Integer>> nodoToLinenumber;
 
     ControlFlowAnalyser(){
         if (nodoToInteger == null) nodoToInteger = new HashMap<>();
         if (nodoToLinenumber == null) nodoToLinenumber = new HashMap<>();
     }
 
-    public static Map<String, Map<AbstractInsnNode, Integer>> getNodoToInteger() {
+    public Map<String, Map<AbstractInsnNode, Integer>> getNodoToInteger() {
         return nodoToInteger;
     }
 
-    public static Map<String, Map<Integer, Integer>> getNodoToLinenumber() {
+    public Map<String, Map<Integer, Integer>> getNodoToLinenumber() {
         return nodoToLinenumber;
     }
 
@@ -206,7 +206,6 @@ public class ControlFlowAnalyser {
             int op = in.getOpcode();
             if (op >= IFEQ && op <= IF_ACMPNE || op >= IFNULL && op <= IFNONNULL) {
                 if (isBooleanAssignment(in)){
-                    System.out.println("Asignación booleana");
                     continue;
                 }
                 if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) {
