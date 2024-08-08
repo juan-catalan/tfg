@@ -34,6 +34,12 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private TemplateEngine templateEngine = new TemplateEngine();
     static private ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
     static private ControlFlowAnalyser controlFlowAnalyser = new ControlFlowAnalyser();
+    static private Set<String> metodosAMedir;
+
+    public static void addMetodosMedir(Map<String, Integer> metodosCaminosImposibles) {
+        metodosAMedir = metodosCaminosImposibles.keySet();
+        metodosCaminosImposibles.forEach((k,v) -> caminosImposiblesMetodo.put(k,v));
+    }
 
     public void addNodoToIntger(String nombre){
         controlFlowAnalyser.getNodoToInteger().put(nombre, new HashMap<>());
@@ -116,6 +122,11 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return writer.toString();
     }
 
+    static private double calcularCobertura(int situacionesEjecutadas, int totalSituaciones, int situacionesImposibles){
+        if (totalSituaciones == 0) return 100;
+        else return (100.0D * (situacionesEjecutadas / (totalSituaciones - situacionesImposibles)));
+    }
+
     static public void imprimirInforme(){
         if (DEBUG) System.out.println("---------------- Ejecucion terminada ----------------");
         List<MethodReportDTO> methodReportDTOList = new ArrayList<>();
@@ -152,7 +163,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                             return new EdgePair(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal));
                         }
                     }).toList(),
-                    (100.0D * (recorridosCaminos.size()) / (todosCaminos.size() - caminosImposiblesMetodo.get(metodo)))
+                    calcularCobertura(recorridosCaminos.size(), todosCaminos.size(), caminosImposiblesMetodo.get(metodo))
                     );
             methodReportDTOList.add(methodReportDTO);
         }
@@ -367,20 +378,15 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                     isAnnotated = true;
                 }
             }
-            if (isAnnotated) {
+            if (isAnnotated || metodosAMedir.contains(idMetodo)) {
+                System.out.println(idMetodo);
                 controlFlowAnalyser.getNodoToInteger().put(idMetodo, new HashMap<>());
                 controlFlowAnalyser.getNodoToLinenumber().put(idMetodo, new HashMap<>());
                 caminosRecorridos.put(idMetodo, new HashSet<>());
                 caminoActual.put(idMetodo, new EdgePair(null, null, null, null, null));
                 if (DEBUG) System.out.println("I'm transforming my own classes: ".concat(className));
                 if (DEBUG) System.out.println("I'm transforming the method: ".concat(mn.name));
-                if ("<init>".equals(mn.name) || "<clinit>".equals(mn.name)) {
-                    continue;
-                }
                 InsnList insns = mn.instructions;
-                if (insns.size() == 0) {
-                    continue;
-                }
 
                 try{
                     DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlFlowAnalyser.getControlFlowGraph(idMetodo, insns);

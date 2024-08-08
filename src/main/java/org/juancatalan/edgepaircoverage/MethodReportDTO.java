@@ -20,4 +20,17 @@ public class MethodReportDTO {
         this.caminosCubiertos = caminosCubiertos;
         this.porcentajeCobertura = porcentajeCobertura;
     }
+
+    @Override
+    public String toString() {
+        return "MethodReportDTO{" +
+                "nombre='" + nombre + '\'' +
+                ", grafo='" + grafo + '\'' +
+                ", grafoImagen='" + grafoImagen + '\'' +
+                ", caminosImposibles=" + caminosImposibles +
+                ", caminos=" + caminos +
+                ", caminosCubiertos=" + caminosCubiertos +
+                ", porcentajeCobertura=" + porcentajeCobertura +
+                '}';
+    }
 }
