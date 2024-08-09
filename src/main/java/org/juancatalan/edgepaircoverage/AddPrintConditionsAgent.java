@@ -9,6 +9,7 @@ public class AddPrintConditionsAgent {
     static Map<String, Integer> metodosCaminosImposibles = new HashMap<>();
 
     private static void parse(String args){
+        // Parseo de metodos a medir cobertura
         System.out.println("agentArgs");
         System.out.println(args);
         String metodos = StringUtils.substringBetween(args, "methods={", "}");
@@ -17,6 +18,7 @@ public class AddPrintConditionsAgent {
             metodosCaminosImposibles.put(metodoYSituacionesImposibles[0], Integer.valueOf(metodoYSituacionesImposibles[1]));
         }
         System.out.println(metodosCaminosImposibles);
+        // Parseo de parametros de configuracion
     }
 
     public static void premain(String agentArgs, Instrumentation inst) {

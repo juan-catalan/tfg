@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.List;
 import java.util.zip.Deflater;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
@@ -19,6 +20,9 @@ import org.objectweb.asm.tree.*;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -124,49 +128,55 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
     static private double calcularCobertura(int situacionesEjecutadas, int totalSituaciones, int situacionesImposibles){
         if (totalSituaciones == 0) return 100;
-        else return (100.0D * (situacionesEjecutadas / (totalSituaciones - situacionesImposibles)));
+        double cobertura = (100.0D * ((double) situacionesEjecutadas / (totalSituaciones - situacionesImposibles)));
+        return (cobertura < 100) ? cobertura : 100.0D;
+    }
+
+    static private MethodReportDTO obtenerMethodReportDTO(String metodo){
+        Set<EdgePair> todosCaminos = almacenCaminos.get(metodo);
+        Set<EdgePair> recorridosCaminos = caminosRecorridos.get(metodo);
+        Map<Integer, Integer> nodoToLinenumberMap  = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
+        return new MethodReportDTO(metodo,
+                graphToDot(metodo),
+                grafosRenderedMetodos.get(metodo),
+                caminosImposiblesMetodo.get(metodo),
+                todosCaminos.stream().map(c -> {
+                            if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
+                                    || !nodoToLinenumberMap.containsKey(c.nodoMedio)
+                                    || !nodoToLinenumberMap.containsKey(c.nodoFinal))
+                                return c;
+                            else
+                                return new EdgePair(
+                                        nodoToLinenumberMap.get(c.nodoInicio),
+                                        c.aristaInicioMedio,
+                                        nodoToLinenumberMap.get(c.nodoMedio),
+                                        c.aristaMedioFinal,
+                                        nodoToLinenumberMap.get(c.nodoFinal))
+                                        ;
+                        }
+                ).sorted(Comparator.comparing((EdgePair c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
+                recorridosCaminos.stream().map(c -> {
+                    if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
+                            || !nodoToLinenumberMap.containsKey(c.nodoMedio)
+                            || !nodoToLinenumberMap.containsKey(c.nodoFinal)){
+                        return c;
+                    }
+                    else {
+                        return new EdgePair(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal));
+                    }
+                }).toList(),
+                calcularCobertura(recorridosCaminos.size(), todosCaminos.size(), caminosImposiblesMetodo.get(metodo))
+        );
     }
 
     static public void imprimirInforme(){
         if (DEBUG) System.out.println("---------------- Ejecucion terminada ----------------");
         List<MethodReportDTO> methodReportDTOList = new ArrayList<>();
         for (String metodo: almacenCaminos.keySet()){
-            Set<EdgePair> todosCaminos = almacenCaminos.get(metodo);
-            Set<EdgePair> recorridosCaminos = caminosRecorridos.get(metodo);
-            Map<Integer, Integer> nodoToLinenumberMap  = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
-            MethodReportDTO methodReportDTO = new MethodReportDTO(metodo,
-                    graphToDot(metodo),
-                    grafosRenderedMetodos.get(metodo),
-                    caminosImposiblesMetodo.get(metodo),
-                    todosCaminos.stream().map(c -> {
-                        if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
-                                || !nodoToLinenumberMap.containsKey(c.nodoMedio)
-                                || !nodoToLinenumberMap.containsKey(c.nodoFinal))
-                            return c;
-                        else
-                            return new EdgePair(
-                                    nodoToLinenumberMap.get(c.nodoInicio),
-                                    c.aristaInicioMedio,
-                                    nodoToLinenumberMap.get(c.nodoMedio),
-                                    c.aristaMedioFinal,
-                                    nodoToLinenumberMap.get(c.nodoFinal))
-                                    ;
-                        }
-                    ).sorted(Comparator.comparing((EdgePair c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
-                    recorridosCaminos.stream().map(c -> {
-                        if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
-                                || !nodoToLinenumberMap.containsKey(c.nodoMedio)
-                                || !nodoToLinenumberMap.containsKey(c.nodoFinal)){
-                            return c;
-                        }
-                        else {
-                            return new EdgePair(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal));
-                        }
-                    }).toList(),
-                    calcularCobertura(recorridosCaminos.size(), todosCaminos.size(), caminosImposiblesMetodo.get(metodo))
-                    );
+            MethodReportDTO methodReportDTO = obtenerMethodReportDTO(metodo);
             methodReportDTOList.add(methodReportDTO);
         }
+        // Genero el report.html
         Context context = new Context();
         context.setVariable("methods", methodReportDTOList);
         StringWriter stringWriter = new StringWriter();
@@ -178,6 +188,18 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         } catch (IOException e) {
             templateEngine.process("report", context, stringWriter);
             System.out.println(stringWriter.toString());
+        }
+        // Genero el report.json
+        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        try {
+            File reportDirectory = new File("coverageReport");
+            if (!reportDirectory.exists()) reportDirectory.mkdirs();
+            Writer fileWriter = new FileWriter(reportDirectory.getName() + "/report.json");
+            String json = ow.writeValueAsString(methodReportDTOList);
+            fileWriter.write(json);
+            fileWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

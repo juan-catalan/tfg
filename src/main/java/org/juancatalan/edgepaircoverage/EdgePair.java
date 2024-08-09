@@ -16,7 +16,7 @@ public class EdgePair {
         this.aristaMedioFinal = aristaMedioFin;
     }
 
-    public boolean isComplete(){
+    boolean isComplete(){
         return nodoInicio != null && nodoMedio != null && nodoFinal != null &&
                 aristaInicioMedio != null && aristaMedioFinal != null;
     }

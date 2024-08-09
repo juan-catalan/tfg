@@ -57,6 +57,9 @@ dependencies {
     implementation("org.thymeleaf:thymeleaf:3.1.2.RELEASE")
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-nop
     implementation("org.slf4j:slf4j-nop:2.0.13")
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
+
 
 
 
