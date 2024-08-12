@@ -192,8 +192,10 @@ public class ControlFlowAnalyser {
         controlGraph.addVertex(in);
         AbstractInsnNode nextPredicate;
         nextPredicate = findNextPredicateNode(in);
-        while (isBooleanAssignment(nextPredicate)){
-            nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+        if (!isBooleanAssignmentPredicateNode){
+            while (isBooleanAssignment(nextPredicate)){
+                nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+            }
         }
         if (nextPredicate != null){
             if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null){
@@ -207,7 +209,7 @@ public class ControlFlowAnalyser {
             in = j.next();
             int op = in.getOpcode();
             if (op >= IFEQ && op <= IF_ACMPNE || op >= IFNULL && op <= IFNONNULL) {
-                if (isBooleanAssignment(in)){
+                if (!isBooleanAssignmentPredicateNode && isBooleanAssignment(in)){
                     continue;
                 }
                 if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) {
@@ -219,7 +221,9 @@ public class ControlFlowAnalyser {
                 if (in instanceof JumpInsnNode){
                     AbstractInsnNode target = findJumpDestiny((JumpInsnNode) in);
                     nextPredicate = findNextPredicateNode(target);
-                    while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+                    if (!isBooleanAssignmentPredicateNode){
+                        while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+                    }
                     if (nextPredicate != null){
                         if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
                             nodeLinenumberMap.put(indiceNodo, findLinenumber(nextPredicate));
@@ -231,7 +235,9 @@ public class ControlFlowAnalyser {
                 }
                 // Busco el siguiente nodo predicado por el camino FALSE
                 nextPredicate = findNextPredicateNode(in.getNext());
-                while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+                if (!isBooleanAssignmentPredicateNode){
+                    while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+                }
                 if (nextPredicate != null){
                     if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
                         nodeLinenumberMap.put(indiceNodo, findLinenumber(nextPredicate));
