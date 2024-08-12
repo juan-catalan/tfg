@@ -24,7 +24,7 @@ import static org.objectweb.asm.Opcodes.ASM4;
 class GetControlFlowGraphTest {
     @Test
     void testPruebaFor() {
-        NumVerticesAristasVerifier.verify(Main.class, "pruebaFor", 3, 3);
+        NumVerticesAristasVerifier.verify(Main.class, "pruebaFor", 3, 3, false);
     }
 
     @Test

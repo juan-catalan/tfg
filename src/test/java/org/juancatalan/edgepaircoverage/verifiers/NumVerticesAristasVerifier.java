@@ -3,6 +3,7 @@ package org.juancatalan.edgepaircoverage.verifiers;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.juancatalan.edgepaircoverage.AddPrintConditionsTransformer;
 import org.juancatalan.edgepaircoverage.BooleanEdge;
+import org.juancatalan.edgepaircoverage.ControlFlowAnalyser;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -17,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.objectweb.asm.Opcodes.ASM4;
 
 public class NumVerticesAristasVerifier {
-    public static void verify(Class clase, String nombreMetodo, int numVerticesEsperado, int numAristasEsperado){
+    public static void verify(Class clase, String nombreMetodo, int numVerticesEsperado, int numAristasEsperado, boolean isBooleanAssignmentsPredicateNode){
         String idMetodo = clase.getName().concat(".").concat(nombreMetodo);
 
         ClassNode cn = new ClassNode(ASM4);
@@ -33,11 +34,9 @@ public class NumVerticesAristasVerifier {
         assertFalse(metodo.isEmpty());
 
         InsnList listaInstrucciones = metodo.get().instructions;
-        AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
-        transformer.addNodoToIntger(idMetodo);
-        transformer.addNodoLinenumber(idMetodo);
-        transformer.getControlFlowAnalyser().analyze(idMetodo, listaInstrucciones);
-        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowAnalyser().getControlFlowGraph(idMetodo);
+        ControlFlowAnalyser controlFlowAnalyser = new ControlFlowAnalyser(isBooleanAssignmentsPredicateNode);
+        controlFlowAnalyser.analyze(idMetodo, listaInstrucciones);
+        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = controlFlowAnalyser.getControlFlowGraph(idMetodo);
 
         assertEquals(numVerticesEsperado, controlFlowGraph.vertexSet().size());
         assertEquals(numAristasEsperado, controlFlowGraph.edgeSet().size());

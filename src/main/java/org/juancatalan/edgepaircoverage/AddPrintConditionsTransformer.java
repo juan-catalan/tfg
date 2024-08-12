@@ -3,6 +3,7 @@ package org.juancatalan.edgepaircoverage;
 import java.io.*;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
+import java.nio.charset.StandardCharsets;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.List;
@@ -37,7 +38,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private AddPrintConditionsTransformer instance;
     static private TemplateEngine templateEngine = new TemplateEngine();
     static private ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-    static private ControlFlowAnalyser controlFlowAnalyser = new ControlFlowAnalyser(true);
+    static private ControlFlowAnalyser controlFlowAnalyser = new ControlFlowAnalyser(false);
     static private Set<String> metodosAMedir;
 
     public static void addMetodosMedir(Map<String, Integer> metodosCaminosImposibles) {
@@ -366,47 +367,40 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
             }
             if (isAnnotated || metodosAMedir.contains(idMetodo)) {
                 System.out.println(idMetodo);
-                controlFlowAnalyser.getNodoToInteger().put(idMetodo, new HashMap<>());
-                controlFlowAnalyser.getNodoToLinenumber().put(idMetodo, new HashMap<>());
                 caminosRecorridos.put(idMetodo, new HashSet<>());
                 caminoActual.put(idMetodo, new EdgePair(null, null, null, null, null));
                 if (DEBUG) System.out.println("I'm transforming my own classes: ".concat(className));
                 if (DEBUG) System.out.println("I'm transforming the method: ".concat(mn.name));
                 InsnList insns = mn.instructions;
 
-                try{
-                    controlFlowAnalyser.analyze(idMetodo, insns);
-                    DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlFlowAnalyser.getControlFlowGraph(idMetodo);
-                    DirectedPseudograph<Integer, BooleanEdge> grafoAsInteger = controlFlowAnalyser.getControlFlowGraphAsIntegerGraph(idMetodo);
-                    if (DEBUG) System.out.println(grafo.toString());
-                    grafosMetodos.put(idMetodo, grafoAsInteger);
-                    String graphDot = GraphToDotTransformer.graphToDot(controlFlowAnalyser.getControlFlowGraphAsLinenumberGraph(idMetodo));
-                    byte[] output = new byte[graphDot.getBytes().length];
-                    Deflater compresser = new Deflater();
-                    compresser.setInput(
-                            graphDot
-                                    .getBytes("UTF-8"));
-                    compresser.finish();
-                    compresser.deflate(output);
-                    //System.out.println("output");
-                    //System.out.println(new String(output));
-                    String outputB64 = Base64.getUrlEncoder().encodeToString(output);
-                    grafosRenderedMetodos.put(idMetodo,"https://kroki.io/graphviz/png/" + outputB64);
+
+                controlFlowAnalyser.analyze(idMetodo, insns);
+                DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlFlowAnalyser.getControlFlowGraph(idMetodo);
+                DirectedPseudograph<Integer, BooleanEdge> grafoAsInteger = controlFlowAnalyser.getControlFlowGraphAsIntegerGraph(idMetodo);
+                if (DEBUG) System.out.println(grafo.toString());
+                grafosMetodos.put(idMetodo, grafoAsInteger);
+                String graphDot = GraphToDotTransformer.graphToDot(controlFlowAnalyser.getControlFlowGraphAsLinenumberGraph(idMetodo));
+                byte[] output = new byte[graphDot.getBytes().length];
+                Deflater compresser = new Deflater();
+                compresser.setInput(
+                        graphDot
+                                .getBytes(StandardCharsets.UTF_8));
+                compresser.finish();
+                compresser.deflate(output);
+                //System.out.println("output");
+                //System.out.println(new String(output));
+                String outputB64 = Base64.getUrlEncoder().encodeToString(output);
+                grafosRenderedMetodos.put(idMetodo,"https://kroki.io/graphviz/png/" + outputB64);
 
 
 
-                    Set<EdgePair> caminos = obtenerSituacionesPrueba(idMetodo, grafo);
-                    //System.out.println("Caminos de profundidad 2: " + caminos.size());
-                    if (DEBUG) System.out.println(caminos);
-                    almacenCaminos.put(idMetodo ,caminos);
+                Set<EdgePair> caminos = obtenerSituacionesPrueba(idMetodo, grafo);
+                //System.out.println("Caminos de profundidad 2: " + caminos.size());
+                if (DEBUG) System.out.println(caminos);
+                almacenCaminos.put(idMetodo ,caminos);
 
 
-                    this.addInstructionsConditionsAndBranches(idMetodo, insns, grafo, controlFlowAnalyser.getNodoToInteger().get(idMetodo));
-
-
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
+                this.addInstructionsConditionsAndBranches(idMetodo, insns, grafo, controlFlowAnalyser.getNodoToInteger().get(idMetodo));
             }
         }
 

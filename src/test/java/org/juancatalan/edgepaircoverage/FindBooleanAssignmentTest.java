@@ -78,32 +78,32 @@ class FindBooleanAssignmentTest {
 
     @Test
     void testFindBooleanAssignmentTest() throws NoSuchMethodException {
-        NumVerticesAristasVerifier.verify(Convocatoria2.class, "imagen", 6, 7);
+        NumVerticesAristasVerifier.verify(Convocatoria2.class, "imagen", 6, 7, true);
     }
 
     @Test
     void testAsignacionBooleanaSimple() throws NoSuchMethodException {
-        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaSimple", 3, 3);
+        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaSimple", 3, 3, true);
     }
 
     @Test
     void testAsignacionBooleanaConAnd() throws NoSuchMethodException {
-        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaConAnd", 3, 3);
+        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaConAnd", 3, 3, true);
     }
 
     @Test
     void testAsignacionBooleanaConOr() throws NoSuchMethodException {
-        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaConOr", 3, 3);
+        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaConOr", 3, 3, true);
     }
 
     @Test
     void testAsignacionBooleanaConTripleOr() throws NoSuchMethodException {
-        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaConTripleOr", 3, 3);
+        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaConTripleOr", 3, 3, true);
     }
 
     @Disabled("Aun no funciona para combinacion de puertas logicas")
     @Test
     void testAsignacionBooleanaCombinada() throws NoSuchMethodException {
-        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaCombinandoOrAnd", 3, 3);
+        NumVerticesAristasVerifier.verify(this.getClass(), "pruebaAsignacionBooleanaCombinandoOrAnd", 3, 3, true);
     }
 }

@@ -3,6 +3,7 @@ package org.juancatalan.edgepaircoverage.verifiers;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.juancatalan.edgepaircoverage.AddPrintConditionsTransformer;
 import org.juancatalan.edgepaircoverage.BooleanEdge;
+import org.juancatalan.edgepaircoverage.ControlFlowAnalyser;
 import org.juancatalan.edgepaircoverage.utils.AdjacencyMatrix;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -33,12 +34,10 @@ public class IsomorfismoGrafosVerifier {
         assertFalse(metodo.isEmpty(), "El método no existe en esa clase");
 
         InsnList listaInstrucciones = metodo.get().instructions;
-        AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
-        transformer.addNodoToIntger(idMetodo);
-        transformer.addNodoLinenumber(idMetodo);
-        transformer.getControlFlowAnalyser().analyze(idMetodo, listaInstrucciones);
-        DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = transformer.getControlFlowAnalyser().getControlFlowGraphAsIntegerGraph(idMetodo);
+        ControlFlowAnalyser controlFlowAnalyser = new ControlFlowAnalyser(false);
+        controlFlowAnalyser.analyze(idMetodo, listaInstrucciones);
 
+        DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = controlFlowAnalyser.getControlFlowGraphAsIntegerGraph(idMetodo);
 
         assertEquals(grafoEsperado.vertexSet().size(), controlFlowGraphInt.vertexSet().size(), "El grafo obtenido no tiene el número de vertices esperado");
         assertEquals(grafoEsperado.edgeSet().size(), controlFlowGraphInt.edgeSet().size(), "El grafo obtenido no tiene el número de aristas esperado");

@@ -172,6 +172,9 @@ public class ControlFlowAnalyser {
     }
 
     public void analyze(String idMetodo, InsnList insns){
+        if (!nodoToInteger.containsKey(idMetodo)) nodoToInteger.put(idMetodo, new HashMap<>());
+        if (!nodoToLinenumber.containsKey(idMetodo)) nodoToLinenumber.put(idMetodo, new HashMap<>());
+
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Iterator<AbstractInsnNode> j = insns.iterator();
         Integer indiceNodo = 1;
