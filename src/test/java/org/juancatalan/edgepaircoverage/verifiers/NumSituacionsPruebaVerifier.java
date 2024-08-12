@@ -35,15 +35,10 @@ public class NumSituacionsPruebaVerifier {
 
         assertFalse(metodo.isEmpty());
 
-
         InsnList listaInstrucciones = metodo.get().instructions;
-        AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
-        transformer.addNodoToIntger(idMetodo);
-        transformer.addNodoLinenumber(idMetodo);
-        transformer.getControlFlowAnalyser().analyze(idMetodo, listaInstrucciones);
-        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowAnalyser().getControlFlowGraph(idMetodo);
-        Set<EdgePair> situacionesPrueba = transformer.obtenerSituacionesPrueba(idMetodo, controlFlowGraph);
-
+        ControlFlowAnalyser controlFlowAnalyser = new ControlFlowAnalyser(false);
+        controlFlowAnalyser.analyze(idMetodo, listaInstrucciones);
+        Set<EdgePair> situacionesPrueba = controlFlowAnalyser.obtenerSituacionesPrueba(idMetodo);
 
         assertEquals(numSituacionesPrueba, situacionesPrueba.size());
     }

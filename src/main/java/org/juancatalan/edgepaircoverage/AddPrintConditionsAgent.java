@@ -7,11 +7,12 @@ import java.util.*;
 
 public class AddPrintConditionsAgent {
     static Map<String, Integer> metodosCaminosImposibles = new HashMap<>();
+    static boolean booleanAssignmentPredicateNode = false;
 
     private static void parse(String args){
-        // Parseo de metodos a medir cobertura
         System.out.println("agentArgs");
         System.out.println(args);
+        // Parseo de metodos a medir cobertura
         String metodos = StringUtils.substringBetween(args, "methods={", "}");
         if (metodos != null){
             for (String s : metodos.split(";")) {
@@ -21,12 +22,16 @@ public class AddPrintConditionsAgent {
             System.out.println(metodosCaminosImposibles);
         }
         // Parseo de parametros de configuracion
+        String booleanAssignmentPredicateNodeOption = StringUtils.substringBetween(args, "booleanAssignmentPredicateNode={", "}");
+        if (booleanAssignmentPredicateNodeOption != null){
+            booleanAssignmentPredicateNode = Boolean.valueOf(booleanAssignmentPredicateNodeOption);
+            System.out.println("booleanAssignmentPredicateNode " + booleanAssignmentPredicateNode);
+        }
     }
 
     public static void premain(String agentArgs, Instrumentation inst) {
         parse(agentArgs);
-        AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
-        AddPrintConditionsTransformer.addMetodosMedir(metodosCaminosImposibles);
+        AddPrintConditionsTransformer transformer = new AddPrintConditionsTransformer(metodosCaminosImposibles, booleanAssignmentPredicateNode);
         inst.addTransformer(transformer);
     }
 }

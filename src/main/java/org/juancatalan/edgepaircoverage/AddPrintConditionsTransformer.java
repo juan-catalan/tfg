@@ -38,21 +38,8 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private AddPrintConditionsTransformer instance;
     static private TemplateEngine templateEngine = new TemplateEngine();
     static private ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-    static private ControlFlowAnalyser controlFlowAnalyser = new ControlFlowAnalyser(false);
+    static private ControlFlowAnalyser controlFlowAnalyser;
     static private Set<String> metodosAMedir;
-
-    public static void addMetodosMedir(Map<String, Integer> metodosCaminosImposibles) {
-        metodosAMedir = metodosCaminosImposibles.keySet();
-        metodosCaminosImposibles.forEach((k,v) -> caminosImposiblesMetodo.put(k,v));
-    }
-
-    public void addNodoToIntger(String nombre){
-        controlFlowAnalyser.getNodoToInteger().put(nombre, new HashMap<>());
-    }
-
-    public void addNodoLinenumber(String nombre){
-        controlFlowAnalyser.getNodoToLinenumber().put(nombre, new HashMap<>());
-    }
 
     private static class ShutDownHook extends Thread {
         public void run() {
@@ -72,18 +59,12 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         templateEngine.process("report", new Context(), Writer.nullWriter());
     }
 
-    private AddPrintConditionsTransformer (){
-        new AddPrintConditionsTransformer(false);
+    public AddPrintConditionsTransformer (Map<String, Integer> metodosCaminosImposibles, boolean isBooleanAssignmentPredicateNode){
+        new AddPrintConditionsTransformer(metodosCaminosImposibles, isBooleanAssignmentPredicateNode, false);
     }
 
-    public static AddPrintConditionsTransformer getInstance(){
-        if (instance == null){
-            instance = new AddPrintConditionsTransformer();
-        }
-        return instance;
-    }
 
-    private AddPrintConditionsTransformer (boolean debug){
+    private AddPrintConditionsTransformer (Map<String, Integer> metodosCaminosImposibles, boolean isBooleanAssignmentPredicateNode, boolean debug){
         DEBUG = debug;
         if (DEBUG) System.out.println("Prueba constructor");
         if (almacenCaminos == null) almacenCaminos = new HashMap<>();
@@ -92,6 +73,11 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         if (grafosMetodos == null) grafosMetodos = new HashMap<>();
         if (grafosRenderedMetodos == null) grafosRenderedMetodos = new HashMap<>();
         if (caminosImposiblesMetodo == null) caminosImposiblesMetodo = new HashMap<>();
+        if (metodosCaminosImposibles!=null){
+            metodosAMedir = metodosCaminosImposibles.keySet();
+            metodosCaminosImposibles.forEach((k,v) -> caminosImposiblesMetodo.put(k,v));
+        }
+        controlFlowAnalyser = new ControlFlowAnalyser(isBooleanAssignmentPredicateNode);
         initializeThymeleaf();
         ShutDownHook jvmShutdownHook = new ShutDownHook();
         Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
@@ -283,49 +269,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
     }
 
-    static DirectedPseudograph<Integer, BooleanEdge> transformGraphFromIntegerToLinenumber(String metodo, DirectedPseudograph<Integer, BooleanEdge> grafo){
-        DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
-        Map<Integer, Integer> integerLinenumberMap = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
-        Map<Integer, Integer> numNodosPorLinea = new HashMap<>();
-        for (Integer nodo: grafo.vertexSet()){
-            // Si existe
-            if (numNodosPorLinea.get(nodo) != null){
-
-            }
-            newGraph.addVertex(integerLinenumberMap.get(nodo));
-        }
-        for (BooleanEdge edge: grafo.edgeSet()){
-            newGraph.addEdge(integerLinenumberMap.get(grafo.getEdgeSource(edge)),
-                    integerLinenumberMap.get(grafo.getEdgeTarget(edge)),
-                    new BooleanEdge(edge.getType()));
-        }
-        return newGraph;
-    }
-
-    public ControlFlowAnalyser getControlFlowAnalyser(){
-        return controlFlowAnalyser;
-    }
-
-    public Set<EdgePair> obtenerSituacionesPrueba(String idMetodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
-        Set<EdgePair> caminos = new HashSet<>();
-        for (AbstractInsnNode i: grafo.vertexSet()){
-            if (!grafo.incomingEdgesOf(i).isEmpty() && !grafo.outgoingEdgesOf(i).isEmpty()){
-                for (BooleanEdge edgeIn: grafo.incomingEdgesOf(i)){
-                    for (BooleanEdge edgeOut: grafo.outgoingEdgesOf(i)){
-                        Integer nodoInicio = controlFlowAnalyser.getNodoToInteger().get(idMetodo).get(grafo.getEdgeSource(edgeIn));
-                        Integer nodoMedio = controlFlowAnalyser.getNodoToInteger().get(idMetodo).get(grafo.getEdgeTarget(edgeIn));
-                        Integer nodoFinal = controlFlowAnalyser.getNodoToInteger().get(idMetodo).get(grafo.getEdgeTarget(edgeOut));
-
-                        EdgePair camino = new EdgePair(nodoInicio, edgeIn.getType(), nodoMedio,
-                                edgeOut.getType(), nodoFinal);
-                        caminos.add(camino);
-                    }
-                }
-            }
-        }
-        return caminos;
-    }
-
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
         /*
@@ -394,7 +337,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
 
 
 
-                Set<EdgePair> caminos = obtenerSituacionesPrueba(idMetodo, grafo);
+                Set<EdgePair> caminos = controlFlowAnalyser.obtenerSituacionesPrueba(idMetodo);
                 //System.out.println("Caminos de profundidad 2: " + caminos.size());
                 if (DEBUG) System.out.println(caminos);
                 almacenCaminos.put(idMetodo ,caminos);

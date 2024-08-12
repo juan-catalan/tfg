@@ -3,10 +3,7 @@ package org.juancatalan.edgepaircoverage;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.objectweb.asm.tree.*;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.objectweb.asm.Opcodes.*;
 import static org.objectweb.asm.Opcodes.IFNONNULL;
@@ -284,5 +281,27 @@ public class ControlFlowAnalyser {
                     new BooleanEdge(edge.getType()));
         }
         return newGraph;
+    }
+
+    public Set<EdgePair> obtenerSituacionesPrueba(String idMetodo){
+        DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlGraphs.get(idMetodo);
+        Map<AbstractInsnNode, Integer> nodoToIntegerMap = nodoToInteger.get(idMetodo);
+        Set<EdgePair> caminos = new HashSet<>();
+        for (AbstractInsnNode i: grafo.vertexSet()){
+            if (!grafo.incomingEdgesOf(i).isEmpty() && !grafo.outgoingEdgesOf(i).isEmpty()){
+                for (BooleanEdge edgeIn: grafo.incomingEdgesOf(i)){
+                    for (BooleanEdge edgeOut: grafo.outgoingEdgesOf(i)){
+                        Integer nodoInicio = nodoToIntegerMap.get(grafo.getEdgeSource(edgeIn));
+                        Integer nodoMedio = nodoToIntegerMap.get(grafo.getEdgeTarget(edgeIn));
+                        Integer nodoFinal = nodoToIntegerMap.get(grafo.getEdgeTarget(edgeOut));
+
+                        EdgePair camino = new EdgePair(nodoInicio, edgeIn.getType(), nodoMedio,
+                                edgeOut.getType(), nodoFinal);
+                        caminos.add(camino);
+                    }
+                }
+            }
+        }
+        return caminos;
     }
 }
