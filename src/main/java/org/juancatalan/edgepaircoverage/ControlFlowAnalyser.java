@@ -12,8 +12,14 @@ import static org.objectweb.asm.Opcodes.*;
 import static org.objectweb.asm.Opcodes.IFNONNULL;
 
 public class ControlFlowAnalyser {
+    private boolean isBooleanAssignmentPredicateNode;
+    private Map<String, DirectedPseudograph<AbstractInsnNode, BooleanEdge>> controlGraphs = new HashMap<>();
     private Map<String, Map<AbstractInsnNode, Integer>> nodoToInteger = new HashMap<>();
     private Map<String, Map<Integer, Integer>> nodoToLinenumber = new HashMap<>();
+
+    public ControlFlowAnalyser(boolean isBooleanAssignmentPredicateNode) {
+        this.isBooleanAssignmentPredicateNode = isBooleanAssignmentPredicateNode;
+    }
 
 
     public Map<String, Map<AbstractInsnNode, Integer>> getNodoToInteger() {
@@ -73,11 +79,11 @@ public class ControlFlowAnalyser {
         //System.out.println("Por normal");
         //System.out.println(findLinenumber(in.getNext()));
         caminoNormalBool = isBranchBooleanAssignment(in.getNext());
-        /* Descomentar para permitir booleanAssignments multiples
-        if (caminoSaltoBool.isPresent() && caminoNormalBool.isEmpty()){
+        // Si queremos entender que las asignaciones booleanas son nodos predicado
+        if (isBooleanAssignmentPredicateNode &&
+                caminoSaltoBool.isPresent() && caminoNormalBool.isEmpty()){
             return isBooleanAssignment(findNextPredicateNode(in.getNext()));
         }
-        */
         return caminoNormalBool.isPresent() && caminoSaltoBool.isPresent()
                 && caminoNormalBool.get().value() != caminoSaltoBool.get().value()
                 && caminoNormalBool.get().index() == caminoSaltoBool.get().index();
@@ -165,7 +171,7 @@ public class ControlFlowAnalyser {
         return null;
     }
 
-    public DirectedPseudograph<AbstractInsnNode, BooleanEdge> getControlFlowGraph(String idMetodo, InsnList insns){
+    public void analyze(String idMetodo, InsnList insns){
         DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Iterator<AbstractInsnNode> j = insns.iterator();
         Integer indiceNodo = 1;
@@ -236,7 +242,44 @@ public class ControlFlowAnalyser {
                 }
             }
         }
-        return controlGraph;
+        controlGraphs.put(idMetodo, controlGraph);
     }
 
+    public DirectedPseudograph<AbstractInsnNode, BooleanEdge> getControlFlowGraph(String idMetodo){
+        return controlGraphs.get(idMetodo);
+    }
+
+    public DirectedPseudograph<Integer, BooleanEdge> getControlFlowGraphAsIntegerGraph(String idMetodo){
+        DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlGraphs.get(idMetodo);
+        DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
+        Map<AbstractInsnNode, Integer> nodeIntegerMap = nodoToInteger.get(idMetodo);
+        for (AbstractInsnNode nodo: grafo.vertexSet()){
+            newGraph.addVertex(nodeIntegerMap.get(nodo));
+        }
+        for (BooleanEdge edge: grafo.edgeSet()){
+            newGraph.addEdge(nodeIntegerMap.get(grafo.getEdgeSource(edge)),
+                    nodeIntegerMap.get(grafo.getEdgeTarget(edge)),
+                    new BooleanEdge(edge.getType()));
+        }
+        return newGraph;
+    }
+
+    public DirectedPseudograph<Integer, BooleanEdge> getControlFlowGraphAsLinenumberGraph(String idMetodo){
+        DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlGraphs.get(idMetodo);
+        DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
+        Map<AbstractInsnNode, Integer> nodeIntegerMap = nodoToInteger.get(idMetodo);
+        Map<Integer, Integer> integerLinenumberMap = nodoToLinenumber.get(idMetodo);
+        for (AbstractInsnNode nodo: grafo.vertexSet()){
+            newGraph.addVertex(
+                    integerLinenumberMap.get(nodeIntegerMap.get(nodo)
+                    ));
+        }
+        for (BooleanEdge edge: grafo.edgeSet()){
+            newGraph.addEdge(
+                    integerLinenumberMap.get(nodeIntegerMap.get(grafo.getEdgeSource(edge))),
+                    integerLinenumberMap.get(nodeIntegerMap.get(grafo.getEdgeTarget(edge))),
+                    new BooleanEdge(edge.getType()));
+        }
+        return newGraph;
+    }
 }

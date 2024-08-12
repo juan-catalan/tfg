@@ -36,7 +36,8 @@ public class NumVerticesAristasVerifier {
         AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
         transformer.addNodoToIntger(idMetodo);
         transformer.addNodoLinenumber(idMetodo);
-        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowAnalyser().getControlFlowGraph(idMetodo, listaInstrucciones);
+        transformer.getControlFlowAnalyser().analyze(idMetodo, listaInstrucciones);
+        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowAnalyser().getControlFlowGraph(idMetodo);
 
         assertEquals(numVerticesEsperado, controlFlowGraph.vertexSet().size());
         assertEquals(numAristasEsperado, controlFlowGraph.edgeSet().size());

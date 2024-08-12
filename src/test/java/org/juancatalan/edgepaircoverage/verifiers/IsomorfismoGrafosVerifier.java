@@ -36,8 +36,8 @@ public class IsomorfismoGrafosVerifier {
         AddPrintConditionsTransformer transformer = AddPrintConditionsTransformer.getInstance();
         transformer.addNodoToIntger(idMetodo);
         transformer.addNodoLinenumber(idMetodo);
-        DirectedPseudograph<AbstractInsnNode, BooleanEdge> controlFlowGraph = transformer.getControlFlowAnalyser().getControlFlowGraph(idMetodo, listaInstrucciones);
-        DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = AddPrintConditionsTransformer.transformGraphToInteger(idMetodo, controlFlowGraph);
+        transformer.getControlFlowAnalyser().analyze(idMetodo, listaInstrucciones);
+        DirectedPseudograph<Integer, BooleanEdge> controlFlowGraphInt = transformer.getControlFlowAnalyser().getControlFlowGraphAsIntegerGraph(idMetodo);
 
 
         assertEquals(grafoEsperado.vertexSet().size(), controlFlowGraphInt.vertexSet().size(), "El grafo obtenido no tiene el número de vertices esperado");
