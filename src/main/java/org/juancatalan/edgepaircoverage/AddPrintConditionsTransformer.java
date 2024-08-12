@@ -37,7 +37,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private AddPrintConditionsTransformer instance;
     static private TemplateEngine templateEngine = new TemplateEngine();
     static private ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-    static private ControlFlowAnalyser controlFlowAnalyser = new ControlFlowAnalyser();
+    static private ControlFlowAnalyser controlFlowAnalyser = new ControlFlowAnalyser(true);
     static private Set<String> metodosAMedir;
 
     public static void addMetodosMedir(Map<String, Integer> metodosCaminosImposibles) {
@@ -104,27 +104,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         return caminosRecorridos.get(descriptorMetodo).size();
     }
 
-    static String graphToDot(String metodo){
-        DOTExporter<Integer, BooleanEdge> exporter = new DOTExporter<>();
-        Map<Integer, Integer> nodoToLinenumberMap = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
-        //nodoToLinenumberMap.getOrDefault(v, v);
-        exporter.setVertexAttributeProvider((v) -> {
-            Map<String, Attribute> map = new LinkedHashMap<>();
-            // map.put("id", DefaultAttribute.createAttribute("a"));
-            map.put("label", DefaultAttribute.createAttribute(nodoToLinenumberMap.getOrDefault(v, v)));
-            return map;
-        });
-        exporter.setEdgeAttributeProvider((e) -> {
-            Map<String, Attribute> map = new LinkedHashMap<>();
-            map.put("label", DefaultAttribute.createAttribute(e.toString()));
-            return map;
-        });
-        Writer writer = new StringWriter();
-        // exporter.exportGraph(transformGraphFromIntegerToLinenumber(metodo, grafosMetodos.get(metodo)), writer);
-        exporter.exportGraph(grafosMetodos.get(metodo), writer);
-        //System.out.println(writer);
-        return writer.toString();
-    }
 
     static private double calcularCobertura(int situacionesEjecutadas, int totalSituaciones, int situacionesImposibles){
         if (totalSituaciones == 0) return 100;
@@ -137,7 +116,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         Set<EdgePair> recorridosCaminos = caminosRecorridos.get(metodo);
         Map<Integer, Integer> nodoToLinenumberMap  = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
         return new MethodReportDTO(metodo,
-                graphToDot(metodo),
+                GraphToDotTransformer.graphToDot(controlFlowAnalyser.getControlFlowGraphAsLinenumberGraph(metodo)),
                 grafosRenderedMetodos.get(metodo),
                 caminosImposiblesMetodo.get(metodo),
                 todosCaminos.stream().map(c -> {
@@ -303,21 +282,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         }
     }
 
-
-    public static DirectedPseudograph<Integer, BooleanEdge> transformGraphToInteger(String metodo, DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo){
-        DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
-        Map<AbstractInsnNode, Integer> nodeIntegerMap = controlFlowAnalyser.getNodoToInteger().get(metodo);
-        for (AbstractInsnNode nodo: grafo.vertexSet()){
-            newGraph.addVertex(nodeIntegerMap.get(nodo));
-        }
-        for (BooleanEdge edge: grafo.edgeSet()){
-            newGraph.addEdge(nodeIntegerMap.get(grafo.getEdgeSource(edge)),
-                    nodeIntegerMap.get(grafo.getEdgeTarget(edge)),
-                    new BooleanEdge(edge.getType()));
-        }
-        return newGraph;
-    }
-
     static DirectedPseudograph<Integer, BooleanEdge> transformGraphFromIntegerToLinenumber(String metodo, DirectedPseudograph<Integer, BooleanEdge> grafo){
         DirectedPseudograph<Integer, BooleanEdge> newGraph = new DirectedPseudograph<>(BooleanEdge.class);
         Map<Integer, Integer> integerLinenumberMap = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
@@ -411,12 +375,17 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 InsnList insns = mn.instructions;
 
                 try{
-                    DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlFlowAnalyser.getControlFlowGraph(idMetodo, insns);
+                    controlFlowAnalyser.analyze(idMetodo, insns);
+                    DirectedPseudograph<AbstractInsnNode, BooleanEdge> grafo = controlFlowAnalyser.getControlFlowGraph(idMetodo);
+                    DirectedPseudograph<Integer, BooleanEdge> grafoAsInteger = controlFlowAnalyser.getControlFlowGraphAsIntegerGraph(idMetodo);
                     if (DEBUG) System.out.println(grafo.toString());
-                    grafosMetodos.put(idMetodo, transformGraphToInteger(idMetodo, grafo));
-                    byte[] output = new byte[graphToDot(idMetodo).getBytes().length];
+                    grafosMetodos.put(idMetodo, grafoAsInteger);
+                    String graphDot = GraphToDotTransformer.graphToDot(controlFlowAnalyser.getControlFlowGraphAsLinenumberGraph(idMetodo));
+                    byte[] output = new byte[graphDot.getBytes().length];
                     Deflater compresser = new Deflater();
-                    compresser.setInput(graphToDot(idMetodo).getBytes("UTF-8"));
+                    compresser.setInput(
+                            graphDot
+                                    .getBytes("UTF-8"));
                     compresser.finish();
                     compresser.deflate(output);
                     //System.out.println("output");

@@ -13,11 +13,13 @@ public class AddPrintConditionsAgent {
         System.out.println("agentArgs");
         System.out.println(args);
         String metodos = StringUtils.substringBetween(args, "methods={", "}");
-        for (String s : metodos.split(";")) {
-            String[] metodoYSituacionesImposibles = s.split(":");
-            metodosCaminosImposibles.put(metodoYSituacionesImposibles[0], Integer.valueOf(metodoYSituacionesImposibles[1]));
+        if (metodos != null){
+            for (String s : metodos.split(";")) {
+                String[] metodoYSituacionesImposibles = s.split(":");
+                metodosCaminosImposibles.put(metodoYSituacionesImposibles[0], Integer.valueOf(metodoYSituacionesImposibles[1]));
+            }
+            System.out.println(metodosCaminosImposibles);
         }
-        System.out.println(metodosCaminosImposibles);
         // Parseo de parametros de configuracion
     }
 
