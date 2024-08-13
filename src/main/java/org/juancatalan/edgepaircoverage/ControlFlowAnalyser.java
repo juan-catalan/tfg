@@ -76,9 +76,8 @@ public class ControlFlowAnalyser {
         //System.out.println("Por normal");
         //System.out.println(findLinenumber(in.getNext()));
         caminoNormalBool = isBranchBooleanAssignment(in.getNext());
-        // Si queremos entender que las asignaciones booleanas son nodos predicado
-        if (isBooleanAssignmentPredicateNode &&
-                caminoSaltoBool.isPresent() && caminoNormalBool.isEmpty()){
+        // Si queremos identificar puertas logicas anidadas
+        if (caminoSaltoBool.isPresent() && caminoNormalBool.isEmpty()){
             return isBooleanAssignment(findNextPredicateNode(in.getNext()));
         }
         return caminoNormalBool.isPresent() && caminoSaltoBool.isPresent()

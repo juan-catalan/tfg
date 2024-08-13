@@ -15,7 +15,7 @@ public class AddPrintConditionsAgent {
         // Parseo de metodos a medir cobertura
         String metodos = StringUtils.substringBetween(args, "methods={", "}");
         if (metodos != null){
-            for (String s : metodos.split(";")) {
+            for (String s : metodos.split(";;")) {
                 String[] metodoYSituacionesImposibles = s.split(":");
                 metodosCaminosImposibles.put(metodoYSituacionesImposibles[0], Integer.valueOf(metodoYSituacionesImposibles[1]));
             }
