@@ -1,4 +1,4 @@
-package org.juancatalan.edgepaircoverage;
+package org.juancatalan.edgepaircoverage.DTO;
 
 import java.util.List;
 
@@ -7,11 +7,11 @@ public class MethodReportDTO {
     public String grafo;
     public String grafoImagen;
     public Integer caminosImposibles;
-    public List<EdgePair> caminos;
-    public List<EdgePair> caminosCubiertos;
+    public List<EdgePairDTO> caminos;
+    public List<EdgePairDTO> caminosCubiertos;
     public Double porcentajeCobertura;
 
-    public MethodReportDTO(String nombre, String grafo, String grafoImagen, Integer caminosImposibles, List<EdgePair> caminos, List<EdgePair> caminosCubiertos, Double porcentajeCobertura) {
+    public MethodReportDTO(String nombre, String grafo, String grafoImagen, Integer caminosImposibles, List<EdgePairDTO> caminos, List<EdgePairDTO> caminosCubiertos, Double porcentajeCobertura) {
         this.nombre = nombre;
         this.grafo = grafo;
         this.grafoImagen = grafoImagen;

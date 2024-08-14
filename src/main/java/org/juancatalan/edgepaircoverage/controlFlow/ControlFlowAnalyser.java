@@ -1,6 +1,9 @@
-package org.juancatalan.edgepaircoverage;
+package org.juancatalan.edgepaircoverage.controlFlow;
 
 import org.jgrapht.graph.DirectedPseudograph;
+import org.juancatalan.edgepaircoverage.graphs.BooleanEdge;
+import org.juancatalan.edgepaircoverage.graphs.EdgeType;
+import org.juancatalan.edgepaircoverage.utils.MapUtils;
 import org.objectweb.asm.tree.*;
 
 import java.util.*;
@@ -30,7 +33,7 @@ public class ControlFlowAnalyser {
     public Map<Integer, String> getMappingFromNodoToLinenumber(String metodo) {
         Map<Integer, String> map = new HashMap<>();
         Map<Integer, Integer> nodoToLineNumberMap = nodoToLinenumber.get(metodo);
-        Map<Integer, List<Integer>> prueba = invertMap(nodoToLineNumberMap);
+        Map<Integer, List<Integer>> prueba = MapUtils.invertMap(nodoToLineNumberMap);
 
         for (Integer i : nodoToLineNumberMap.keySet()) {
             Integer j = nodoToLineNumberMap.get(i);
@@ -40,17 +43,6 @@ public class ControlFlowAnalyser {
             else map.put(i, j.toString());
         }
         return map;
-    }
-
-    public static <K, V> Map<V, List<K>> invertMap(Map<K, V> map) {
-        Map<V, List<K>> out = new HashMap<>(map.size());
-
-        for (Map.Entry<K, V> kvEntry : map.entrySet()) {
-            out.putIfAbsent(kvEntry.getValue(), new ArrayList<>());
-            out.get(kvEntry.getValue()).add(kvEntry.getKey());
-        }
-
-        return out;
     }
 
     private boolean isPredicateNode(AbstractInsnNode in){

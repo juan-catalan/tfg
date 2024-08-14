@@ -1,4 +1,4 @@
-package org.juancatalan.edgepaircoverage;
+package org.juancatalan.edgepaircoverage.graphs;
 
 public enum EdgeType {
     TRUE,

@@ -1,4 +1,4 @@
-package org.juancatalan.edgepaircoverage;
+package org.juancatalan.edgepaircoverage.graphs;
 
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.nio.Attribute;

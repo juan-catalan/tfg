@@ -9,11 +9,14 @@ import java.util.*;
 import java.util.List;
 import java.util.zip.Deflater;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.jgrapht.graph.DirectedPseudograph;
-import org.jgrapht.nio.Attribute;
-import org.jgrapht.nio.DefaultAttribute;
-import org.jgrapht.nio.dot.DOTExporter;
+import org.juancatalan.edgepaircoverage.DTO.EdgePairDTO;
+import org.juancatalan.edgepaircoverage.DTO.MethodReportDTO;
+import org.juancatalan.edgepaircoverage.controlFlow.ControlFlowAnalyser;
+import org.juancatalan.edgepaircoverage.controlFlow.EdgePair;
+import org.juancatalan.edgepaircoverage.graphs.BooleanEdge;
+import org.juancatalan.edgepaircoverage.graphs.EdgeType;
+import org.juancatalan.edgepaircoverage.graphs.GraphToDotTransformer;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
@@ -101,7 +104,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private MethodReportDTO obtenerMethodReportDTO(String metodo){
         Set<EdgePair> todosCaminos = almacenCaminos.get(metodo);
         Set<EdgePair> recorridosCaminos = caminosRecorridos.get(metodo);
-        Map<Integer, Integer> nodoToLinenumberMap  = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
+        Map<Integer, String> nodoToLinenumberMap  = controlFlowAnalyser.getMappingFromNodoToLinenumber(metodo);
         return new MethodReportDTO(
                 metodo,
                 GraphToDotTransformer.graphToDot(controlFlowAnalyser.getControlFlowGraphAsIntegerGraph(metodo), controlFlowAnalyser.getMappingFromNodoToLinenumber(metodo)),
@@ -111,9 +114,15 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                             if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
                                     || !nodoToLinenumberMap.containsKey(c.nodoMedio)
                                     || !nodoToLinenumberMap.containsKey(c.nodoFinal))
-                                return c;
+                                return new EdgePairDTO(
+                                        c.nodoInicio.toString(),
+                                        c.aristaInicioMedio,
+                                        c.nodoMedio.toString(),
+                                        c.aristaMedioFinal,
+                                        c.nodoFinal.toString()
+                                );
                             else
-                                return new EdgePair(
+                                return new EdgePairDTO(
                                         nodoToLinenumberMap.get(c.nodoInicio),
                                         c.aristaInicioMedio,
                                         nodoToLinenumberMap.get(c.nodoMedio),
@@ -121,17 +130,28 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                                         nodoToLinenumberMap.get(c.nodoFinal))
                                         ;
                         }
-                ).sorted(Comparator.comparing((EdgePair c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
+                ).sorted(Comparator.comparing((EdgePairDTO c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
                 recorridosCaminos.stream().map(c -> {
-                    if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
-                            || !nodoToLinenumberMap.containsKey(c.nodoMedio)
-                            || !nodoToLinenumberMap.containsKey(c.nodoFinal)){
-                        return c;
-                    }
-                    else {
-                        return new EdgePair(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal));
-                    }
-                }).toList(),
+                            if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
+                                    || !nodoToLinenumberMap.containsKey(c.nodoMedio)
+                                    || !nodoToLinenumberMap.containsKey(c.nodoFinal))
+                                return new EdgePairDTO(
+                                        c.nodoInicio.toString(),
+                                        c.aristaInicioMedio,
+                                        c.nodoMedio.toString(),
+                                        c.aristaMedioFinal,
+                                        c.nodoFinal.toString()
+                                );
+                            else
+                                return new EdgePairDTO(
+                                        nodoToLinenumberMap.get(c.nodoInicio),
+                                        c.aristaInicioMedio,
+                                        nodoToLinenumberMap.get(c.nodoMedio),
+                                        c.aristaMedioFinal,
+                                        nodoToLinenumberMap.get(c.nodoFinal))
+                                        ;
+                        }
+                ).sorted(Comparator.comparing((EdgePairDTO c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
                 calcularCobertura(recorridosCaminos.size(), todosCaminos.size(), caminosImposiblesMetodo.get(metodo))
         );
     }
