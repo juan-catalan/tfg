@@ -3,23 +3,12 @@ package org.juancatalan.edgepaircoverage;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.juancatalan.edgepaircoverage.ejerciciosExamen.curso1415.Convocatoria2;
 import org.juancatalan.edgepaircoverage.ejerciciosExamen.curso1819.Convocatoria1;
-import org.juancatalan.edgepaircoverage.utils.AdjacencyMatrix;
+import org.juancatalan.edgepaircoverage.graphs.BooleanEdge;
+import org.juancatalan.edgepaircoverage.graphs.EdgeType;
 import org.juancatalan.edgepaircoverage.verifiers.IsomorfismoGrafosVerifier;
 import org.juancatalan.edgepaircoverage.verifiers.NumVerticesAristasVerifier;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.MethodNode;
-
-import java.io.IOException;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.objectweb.asm.Opcodes.ASM4;
 
 class GetControlFlowGraphTest {
     @Test

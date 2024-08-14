@@ -1,12 +1,8 @@
 package org.juancatalan.edgepaircoverage.verifiers;
 
-import org.jgrapht.graph.DirectedPseudograph;
-import org.juancatalan.edgepaircoverage.AddPrintConditionsTransformer;
-import org.juancatalan.edgepaircoverage.BooleanEdge;
-import org.juancatalan.edgepaircoverage.ControlFlowAnalyser;
-import org.juancatalan.edgepaircoverage.EdgePair;
+import org.juancatalan.edgepaircoverage.controlFlow.ControlFlowAnalyser;
+import org.juancatalan.edgepaircoverage.controlFlow.EdgePair;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.MethodNode;

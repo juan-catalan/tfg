@@ -10,8 +10,6 @@ public class AddPrintConditionsAgent {
     static boolean booleanAssignmentPredicateNode = false;
 
     private static void parse(String args){
-        System.out.println("agentArgs");
-        System.out.println(args);
         // Parseo de metodos a medir cobertura
         String metodos = StringUtils.substringBetween(args, "methods={", "}");
         if (metodos != null){
@@ -25,7 +23,6 @@ public class AddPrintConditionsAgent {
         String booleanAssignmentPredicateNodeOption = StringUtils.substringBetween(args, "booleanAssignmentPredicateNode={", "}");
         if (booleanAssignmentPredicateNodeOption != null){
             booleanAssignmentPredicateNode = Boolean.valueOf(booleanAssignmentPredicateNodeOption);
-            System.out.println("booleanAssignmentPredicateNode " + booleanAssignmentPredicateNode);
         }
     }
 
