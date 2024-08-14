@@ -102,8 +102,9 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         Set<EdgePair> todosCaminos = almacenCaminos.get(metodo);
         Set<EdgePair> recorridosCaminos = caminosRecorridos.get(metodo);
         Map<Integer, Integer> nodoToLinenumberMap  = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
-        return new MethodReportDTO(metodo,
-                GraphToDotTransformer.graphToDot(controlFlowAnalyser.getControlFlowGraphAsIntegerGraph(metodo), controlFlowAnalyser.getNodoToLinenumber().get(metodo)),
+        return new MethodReportDTO(
+                metodo,
+                GraphToDotTransformer.graphToDot(controlFlowAnalyser.getControlFlowGraphAsIntegerGraph(metodo), controlFlowAnalyser.getMappingFromNodoToLinenumber(metodo)),
                 grafosRenderedMetodos.get(metodo),
                 caminosImposiblesMetodo.get(metodo),
                 todosCaminos.stream().map(c -> {
@@ -322,7 +323,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 DirectedPseudograph<Integer, BooleanEdge> grafoAsInteger = controlFlowAnalyser.getControlFlowGraphAsIntegerGraph(idMetodo);
                 if (DEBUG) System.out.println(grafo.toString());
                 grafosMetodos.put(idMetodo, grafoAsInteger);
-                String graphDot = GraphToDotTransformer.graphToDot(grafoAsInteger, controlFlowAnalyser.getNodoToLinenumber().get(idMetodo));
+                String graphDot = GraphToDotTransformer.graphToDot(grafoAsInteger, controlFlowAnalyser.getMappingFromNodoToLinenumber(idMetodo));
                 byte[] output = new byte[graphDot.getBytes().length];
                 Deflater compresser = new Deflater();
                 compresser.setInput(

@@ -11,12 +11,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class GraphToDotTransformer {
-    public static String graphToDot(DirectedPseudograph<Integer, BooleanEdge> grafo, Map<Integer, Integer> nodoToLinenumberMap){
+    public static String graphToDot(DirectedPseudograph<Integer, BooleanEdge> grafo, Map<Integer, String> nodoToLinenumberMap){
         DOTExporter<Integer, BooleanEdge> exporter = new DOTExporter<>();
         exporter.setVertexAttributeProvider((v) -> {
             Map<String, Attribute> map = new LinkedHashMap<>();
             // map.put("id", DefaultAttribute.createAttribute("a"));
-            map.put("label", DefaultAttribute.createAttribute(nodoToLinenumberMap.getOrDefault(v, v).toString()));
+            map.put("label", DefaultAttribute.createAttribute(nodoToLinenumberMap.getOrDefault(v, v.toString())));
             return map;
         });
         exporter.setEdgeAttributeProvider((e) -> {
