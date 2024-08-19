@@ -1,8 +1,8 @@
 package org.juancatalan.edgepaircoverage.utils;
 
 import org.jgrapht.graph.DirectedPseudograph;
-import org.juancatalan.edgepaircoverage.BooleanEdge;
-import org.juancatalan.edgepaircoverage.EdgeType;
+import org.juancatalan.edgepaircoverage.graphs.BooleanEdge;
+import org.juancatalan.edgepaircoverage.graphs.EdgeType;
 
 import java.util.*;
 

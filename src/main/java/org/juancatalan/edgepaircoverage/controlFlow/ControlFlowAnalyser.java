@@ -1,6 +1,9 @@
-package org.juancatalan.edgepaircoverage;
+package org.juancatalan.edgepaircoverage.controlFlow;
 
 import org.jgrapht.graph.DirectedPseudograph;
+import org.juancatalan.edgepaircoverage.graphs.BooleanEdge;
+import org.juancatalan.edgepaircoverage.graphs.EdgeType;
+import org.juancatalan.edgepaircoverage.utils.MapUtils;
 import org.objectweb.asm.tree.*;
 
 import java.util.*;
@@ -25,6 +28,21 @@ public class ControlFlowAnalyser {
 
     public Map<String, Map<Integer, Integer>> getNodoToLinenumber() {
         return nodoToLinenumber;
+    }
+
+    public Map<Integer, String> getMappingFromNodoToLinenumber(String metodo) {
+        Map<Integer, String> map = new HashMap<>();
+        Map<Integer, Integer> nodoToLineNumberMap = nodoToLinenumber.get(metodo);
+        Map<Integer, List<Integer>> valuesToKeysMap = MapUtils.invertMap(nodoToLineNumberMap);
+
+        for (Integer key : nodoToLineNumberMap.keySet()) {
+            Integer value = nodoToLineNumberMap.get(key);
+            if (valuesToKeysMap.get(value).size() > 1){
+                map.put(key, value.toString() + "." + (valuesToKeysMap.get(value).indexOf(key) + 1));
+            }
+            else map.put(key, value.toString());
+        }
+        return map;
     }
 
     private boolean isPredicateNode(AbstractInsnNode in){
@@ -76,14 +94,13 @@ public class ControlFlowAnalyser {
         //System.out.println("Por normal");
         //System.out.println(findLinenumber(in.getNext()));
         caminoNormalBool = isBranchBooleanAssignment(in.getNext());
-        // Si queremos entender que las asignaciones booleanas son nodos predicado
-        if (isBooleanAssignmentPredicateNode &&
-                caminoSaltoBool.isPresent() && caminoNormalBool.isEmpty()){
+        // Si queremos identificar puertas logicas anidadas
+        if (caminoSaltoBool.isPresent() && caminoNormalBool.isEmpty()){
             return isBooleanAssignment(findNextPredicateNode(in.getNext()));
         }
         return caminoNormalBool.isPresent() && caminoSaltoBool.isPresent()
                 && caminoNormalBool.get().value() != caminoSaltoBool.get().value()
-                && caminoNormalBool.get().index() == caminoSaltoBool.get().index();
+                && Objects.equals(caminoNormalBool.get().index(), caminoSaltoBool.get().index());
     }
 
     public AbstractInsnNode findJumpDestiny(JumpInsnNode in){
@@ -192,8 +209,10 @@ public class ControlFlowAnalyser {
         controlGraph.addVertex(in);
         AbstractInsnNode nextPredicate;
         nextPredicate = findNextPredicateNode(in);
-        while (isBooleanAssignment(nextPredicate)){
-            nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+        if (!isBooleanAssignmentPredicateNode){
+            while (isBooleanAssignment(nextPredicate)){
+                nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+            }
         }
         if (nextPredicate != null){
             if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null){
@@ -207,7 +226,7 @@ public class ControlFlowAnalyser {
             in = j.next();
             int op = in.getOpcode();
             if (op >= IFEQ && op <= IF_ACMPNE || op >= IFNULL && op <= IFNONNULL) {
-                if (isBooleanAssignment(in)){
+                if (!isBooleanAssignmentPredicateNode && isBooleanAssignment(in)){
                     continue;
                 }
                 if (nodeIntegerMap.putIfAbsent(in, indiceNodo) == null) {
@@ -219,7 +238,9 @@ public class ControlFlowAnalyser {
                 if (in instanceof JumpInsnNode){
                     AbstractInsnNode target = findJumpDestiny((JumpInsnNode) in);
                     nextPredicate = findNextPredicateNode(target);
-                    while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+                    if (!isBooleanAssignmentPredicateNode){
+                        while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+                    }
                     if (nextPredicate != null){
                         if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
                             nodeLinenumberMap.put(indiceNodo, findLinenumber(nextPredicate));
@@ -231,7 +252,9 @@ public class ControlFlowAnalyser {
                 }
                 // Busco el siguiente nodo predicado por el camino FALSE
                 nextPredicate = findNextPredicateNode(in.getNext());
-                while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+                if (!isBooleanAssignmentPredicateNode){
+                    while (isBooleanAssignment(nextPredicate)) nextPredicate = findNextPredicateNode(nextPredicate.getNext());
+                }
                 if (nextPredicate != null){
                     if (nodeIntegerMap.putIfAbsent(nextPredicate, indiceNodo) == null) {
                         nodeLinenumberMap.put(indiceNodo, findLinenumber(nextPredicate));

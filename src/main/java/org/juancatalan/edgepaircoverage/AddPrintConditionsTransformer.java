@@ -9,11 +9,14 @@ import java.util.*;
 import java.util.List;
 import java.util.zip.Deflater;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.jgrapht.graph.DirectedPseudograph;
-import org.jgrapht.nio.Attribute;
-import org.jgrapht.nio.DefaultAttribute;
-import org.jgrapht.nio.dot.DOTExporter;
+import org.juancatalan.edgepaircoverage.DTO.EdgePairDTO;
+import org.juancatalan.edgepaircoverage.DTO.MethodReportDTO;
+import org.juancatalan.edgepaircoverage.controlFlow.ControlFlowAnalyser;
+import org.juancatalan.edgepaircoverage.controlFlow.EdgePair;
+import org.juancatalan.edgepaircoverage.graphs.BooleanEdge;
+import org.juancatalan.edgepaircoverage.graphs.EdgeType;
+import org.juancatalan.edgepaircoverage.graphs.GraphToDotTransformer;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
@@ -75,7 +78,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         if (caminosImposiblesMetodo == null) caminosImposiblesMetodo = new HashMap<>();
         if (metodosCaminosImposibles!=null){
             metodosAMedir = metodosCaminosImposibles.keySet();
-            metodosCaminosImposibles.forEach((k,v) -> caminosImposiblesMetodo.put(k,v));
+            caminosImposiblesMetodo.putAll(metodosCaminosImposibles);
         }
         controlFlowAnalyser = new ControlFlowAnalyser(isBooleanAssignmentPredicateNode);
         initializeThymeleaf();
@@ -101,18 +104,25 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
     static private MethodReportDTO obtenerMethodReportDTO(String metodo){
         Set<EdgePair> todosCaminos = almacenCaminos.get(metodo);
         Set<EdgePair> recorridosCaminos = caminosRecorridos.get(metodo);
-        Map<Integer, Integer> nodoToLinenumberMap  = controlFlowAnalyser.getNodoToLinenumber().get(metodo);
-        return new MethodReportDTO(metodo,
-                GraphToDotTransformer.graphToDot(controlFlowAnalyser.getControlFlowGraphAsLinenumberGraph(metodo)),
+        Map<Integer, String> nodoToLinenumberMap  = controlFlowAnalyser.getMappingFromNodoToLinenumber(metodo);
+        return new MethodReportDTO(
+                metodo,
+                GraphToDotTransformer.graphToDot(controlFlowAnalyser.getControlFlowGraphAsIntegerGraph(metodo), controlFlowAnalyser.getMappingFromNodoToLinenumber(metodo)),
                 grafosRenderedMetodos.get(metodo),
                 caminosImposiblesMetodo.get(metodo),
                 todosCaminos.stream().map(c -> {
                             if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
                                     || !nodoToLinenumberMap.containsKey(c.nodoMedio)
                                     || !nodoToLinenumberMap.containsKey(c.nodoFinal))
-                                return c;
+                                return new EdgePairDTO(
+                                        c.nodoInicio.toString(),
+                                        c.aristaInicioMedio,
+                                        c.nodoMedio.toString(),
+                                        c.aristaMedioFinal,
+                                        c.nodoFinal.toString()
+                                );
                             else
-                                return new EdgePair(
+                                return new EdgePairDTO(
                                         nodoToLinenumberMap.get(c.nodoInicio),
                                         c.aristaInicioMedio,
                                         nodoToLinenumberMap.get(c.nodoMedio),
@@ -120,17 +130,28 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                                         nodoToLinenumberMap.get(c.nodoFinal))
                                         ;
                         }
-                ).sorted(Comparator.comparing((EdgePair c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
+                ).sorted(Comparator.comparing((EdgePairDTO c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
                 recorridosCaminos.stream().map(c -> {
-                    if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
-                            || !nodoToLinenumberMap.containsKey(c.nodoMedio)
-                            || !nodoToLinenumberMap.containsKey(c.nodoFinal)){
-                        return c;
-                    }
-                    else {
-                        return new EdgePair(nodoToLinenumberMap.get(c.nodoInicio), c.aristaInicioMedio, nodoToLinenumberMap.get(c.nodoMedio), c.aristaMedioFinal, nodoToLinenumberMap.get(c.nodoFinal));
-                    }
-                }).toList(),
+                            if (!nodoToLinenumberMap.containsKey(c.nodoInicio)
+                                    || !nodoToLinenumberMap.containsKey(c.nodoMedio)
+                                    || !nodoToLinenumberMap.containsKey(c.nodoFinal))
+                                return new EdgePairDTO(
+                                        c.nodoInicio.toString(),
+                                        c.aristaInicioMedio,
+                                        c.nodoMedio.toString(),
+                                        c.aristaMedioFinal,
+                                        c.nodoFinal.toString()
+                                );
+                            else
+                                return new EdgePairDTO(
+                                        nodoToLinenumberMap.get(c.nodoInicio),
+                                        c.aristaInicioMedio,
+                                        nodoToLinenumberMap.get(c.nodoMedio),
+                                        c.aristaMedioFinal,
+                                        nodoToLinenumberMap.get(c.nodoFinal))
+                                        ;
+                        }
+                ).sorted(Comparator.comparing((EdgePairDTO c) -> c.nodoInicio).thenComparing(c -> c.nodoMedio).thenComparing(c -> c.nodoFinal)).toList(),
                 calcularCobertura(recorridosCaminos.size(), todosCaminos.size(), caminosImposiblesMetodo.get(metodo))
         );
     }
@@ -147,7 +168,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         context.setVariable("methods", methodReportDTOList);
         StringWriter stringWriter = new StringWriter();
         try {
-            File reportDirectory = new File("coverageReport");
+            File reportDirectory = new File(".edgePairCoverage");
             if (!reportDirectory.exists()) reportDirectory.mkdirs();
             Writer fileWriter = new FileWriter(reportDirectory.getName() + "/report.html");
             templateEngine.process("report", context, fileWriter);
@@ -158,7 +179,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         // Genero el report.json
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
         try {
-            File reportDirectory = new File("coverageReport");
+            File reportDirectory = new File(".edgePairCoverage");
             if (!reportDirectory.exists()) reportDirectory.mkdirs();
             Writer fileWriter = new FileWriter(reportDirectory.getName() + "/report.json");
             String json = ow.writeValueAsString(methodReportDTOList);
@@ -309,7 +330,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
             }
             if (isAnnotated || metodosAMedir.contains(idMetodo)) {
-                System.out.println(idMetodo);
                 caminosRecorridos.put(idMetodo, new HashSet<>());
                 caminoActual.put(idMetodo, new EdgePair(null, null, null, null, null));
                 if (DEBUG) System.out.println("I'm transforming my own classes: ".concat(className));
@@ -322,7 +342,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 DirectedPseudograph<Integer, BooleanEdge> grafoAsInteger = controlFlowAnalyser.getControlFlowGraphAsIntegerGraph(idMetodo);
                 if (DEBUG) System.out.println(grafo.toString());
                 grafosMetodos.put(idMetodo, grafoAsInteger);
-                String graphDot = GraphToDotTransformer.graphToDot(controlFlowAnalyser.getControlFlowGraphAsLinenumberGraph(idMetodo));
+                String graphDot = GraphToDotTransformer.graphToDot(grafoAsInteger, controlFlowAnalyser.getMappingFromNodoToLinenumber(idMetodo));
                 byte[] output = new byte[graphDot.getBytes().length];
                 Deflater compresser = new Deflater();
                 compresser.setInput(

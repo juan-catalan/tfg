@@ -1,4 +1,4 @@
-package org.juancatalan.edgepaircoverage;
+package org.juancatalan.edgepaircoverage.graphs;
 
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.nio.Attribute;
@@ -11,13 +11,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class GraphToDotTransformer {
-    public static String graphToDot(DirectedPseudograph<Integer, BooleanEdge> grafo){
+    public static String graphToDot(DirectedPseudograph<Integer, BooleanEdge> grafo, Map<Integer, String> nodoToLinenumberMap){
         DOTExporter<Integer, BooleanEdge> exporter = new DOTExporter<>();
-        //nodoToLinenumberMap.getOrDefault(v, v);
         exporter.setVertexAttributeProvider((v) -> {
             Map<String, Attribute> map = new LinkedHashMap<>();
             // map.put("id", DefaultAttribute.createAttribute("a"));
-            map.put("label", DefaultAttribute.createAttribute(v.toString()));
+            map.put("label", DefaultAttribute.createAttribute(nodoToLinenumberMap.getOrDefault(v, v.toString())));
             return map;
         });
         exporter.setEdgeAttributeProvider((e) -> {
