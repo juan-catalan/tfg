@@ -12,7 +12,7 @@
     <div class="container">
         <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
             <span class="d-flex align-items-center mb-3 mb-md-0 me-md-auto body-emphasis">
-                <span class="fs-4">Informe de cobertura de camino de profundidad 2</span>
+                <span class="fs-4">Edge-Pair Coverage Report</span>
             </span>
         </header>
         <!--
@@ -36,26 +36,26 @@
             <div th:each="method, itemStat : ${methods}" class="accordion-item">
                 <h5 class="accordion-header">
                     <button th:text="${method.nombre}" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" th:data-bs-target="|#${method.nombre}" aria-expanded="false" th:aria-controls="|#${method.nombre}">
-                        Clase y nombre del metodo
+                        Class and method name
                     </button>
                 </h5>
                 <div th:id="${method.nombre}" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
                     <div class="accordion-body">
 <!--                        <h1 th:text="${method.nombre}">Clase y nombre del metodo</h1>-->
                         <h2>
-                            Porcentaje de cobertura
+                            Coverage percentage
                         </h2>
-                        <p th:if="${method.caminosImposibles} > 0" th:text="|Con ${method.caminosImposibles} caminos imposibles|">Caminos imposibles</p>
+                        <p th:if="${method.caminosImposibles} > 0" th:text="|With ${method.caminosImposibles} impossible test situations|">Caminos imposibles</p>
                         <p class="fs-5">
                             <span th:classappend="${method.porcentajeCobertura} >= 85 ? text-bg-success : (${method.porcentajeCobertura} >= 50 ? text-bg-warning : text-bg-danger)"
                                   class="badge rounded-pill"
-                                  th:text="|${#numbers.formatDecimal(method.porcentajeCobertura, 1, 2)}%|">Porcentaje de cobertura</span>
+                                  th:text="|${#numbers.formatDecimal(method.porcentajeCobertura, 1, 2)}%|">Coverage percentage</span>
                         </p>
-                        <h2>Grafo</h2>
-                        <p th:if="${method.grafoImagen == null}" th:text="${method.grafo}">El grafo no esta disponible</p>
-                        <img th:src="${method.grafoImagen}">
+                        <h2>Graph</h2>
+                        <p th:if="${method.grafoImagen == null}" th:text="${method.grafo}">Image non available</p>
+                        <img th:src="${method.grafoImagen}" th:alt="${method.grafo}">
                         <h2>
-                            Situaciones de prueba
+                            Test situations
                         </h2>
                         <ul th:each="camino : ${method.caminos}">
                             <li>

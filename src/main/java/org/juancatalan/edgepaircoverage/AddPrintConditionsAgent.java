@@ -17,7 +17,6 @@ public class AddPrintConditionsAgent {
                 String[] metodoYSituacionesImposibles = s.split(":");
                 metodosCaminosImposibles.put(metodoYSituacionesImposibles[0], Integer.valueOf(metodoYSituacionesImposibles[1]));
             }
-            System.out.println(metodosCaminosImposibles);
         }
         // Parseo de parametros de configuracion
         String booleanAssignmentPredicateNodeOption = StringUtils.substringBetween(args, "booleanAssignmentPredicateNode={", "}");

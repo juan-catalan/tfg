@@ -78,7 +78,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         if (caminosImposiblesMetodo == null) caminosImposiblesMetodo = new HashMap<>();
         if (metodosCaminosImposibles!=null){
             metodosAMedir = metodosCaminosImposibles.keySet();
-            metodosCaminosImposibles.forEach((k,v) -> caminosImposiblesMetodo.put(k,v));
+            caminosImposiblesMetodo.putAll(metodosCaminosImposibles);
         }
         controlFlowAnalyser = new ControlFlowAnalyser(isBooleanAssignmentPredicateNode);
         initializeThymeleaf();
@@ -168,7 +168,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         context.setVariable("methods", methodReportDTOList);
         StringWriter stringWriter = new StringWriter();
         try {
-            File reportDirectory = new File("coverageReport");
+            File reportDirectory = new File(".edgePairCoverage");
             if (!reportDirectory.exists()) reportDirectory.mkdirs();
             Writer fileWriter = new FileWriter(reportDirectory.getName() + "/report.html");
             templateEngine.process("report", context, fileWriter);
@@ -179,7 +179,7 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
         // Genero el report.json
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
         try {
-            File reportDirectory = new File("coverageReport");
+            File reportDirectory = new File(".edgePairCoverage");
             if (!reportDirectory.exists()) reportDirectory.mkdirs();
             Writer fileWriter = new FileWriter(reportDirectory.getName() + "/report.json");
             String json = ow.writeValueAsString(methodReportDTOList);
@@ -330,7 +330,6 @@ public class AddPrintConditionsTransformer implements ClassFileTransformer {
                 }
             }
             if (isAnnotated || metodosAMedir.contains(idMetodo)) {
-                System.out.println(idMetodo);
                 caminosRecorridos.put(idMetodo, new HashSet<>());
                 caminoActual.put(idMetodo, new EdgePair(null, null, null, null, null));
                 if (DEBUG) System.out.println("I'm transforming my own classes: ".concat(className));
